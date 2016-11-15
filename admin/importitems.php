@@ -304,13 +304,13 @@ function additem($itemtoadd,$item,$questions,$qset) {
 		//DB $query .= "VALUES ('{$item[$itemtoadd]['name']}','{$item[$itemtoadd]['summary']}','$cid','{$item[$itemtoadd]['avail']}','{$item[$itemtoadd]['startdate']}','{$item[$itemtoadd]['enddate']}','{$item[$itemtoadd]['postby']}','{$item[$itemtoadd]['replyby']}','{$item[$itemtoadd]['defdisplay']}','{$item[$itemtoadd]['points']}','{$item[$itemtoadd]['cntingb']}','{$item[$itemtoadd]['settings']}')";
 		//DB mysql_query($query) or die("error on: $query: " . mysql_error());
 		//DB $typeid = mysql_insert_id();
-		$query = "INSERT INTO imas_forums (name,description,courseid,avail,startdate,enddate,postby,replyby,defdisplay,points,cntingb,settings) ";
-		$query .= "VALUES (:name, :description, :courseid, :avail, :startdate, :enddate, :postby, :replyby, :defdisplay, :points, :cntingb, :settings)";
+		$query = "INSERT INTO imas_forums (name,description,courseid,avail,startdate,enddate,postby,replyby,defdisplay,points,cntingb,caltag,settings) ";
+		$query .= "VALUES (:name, :description, :courseid, :avail, :startdate, :enddate, :postby, :replyby, :defdisplay, :points, :cntingb, :caltag, :settings)";
 		$stm = $DBH->prepare($query);
 		$stm->execute(array(':name'=>$item[$itemtoadd]['name'], ':description'=>$item[$itemtoadd]['summary'], ':courseid'=>$cid,
 			':avail'=>$item[$itemtoadd]['avail'], ':startdate'=>$item[$itemtoadd]['startdate'], ':enddate'=>$item[$itemtoadd]['enddate'],
 			':postby'=>$item[$itemtoadd]['postby'], ':replyby'=>$item[$itemtoadd]['replyby'], ':defdisplay'=>$item[$itemtoadd]['defdisplay'],
-			':points'=>$item[$itemtoadd]['points'], ':cntingb'=>$item[$itemtoadd]['cntingb'], ':settings'=>$item[$itemtoadd]['settings']));
+			':points'=>$item[$itemtoadd]['points'], ':cntingb'=>$item[$itemtoadd]['cntingb'], ':caltag'=>$item[$itemtoadd]['caltag'], ':settings'=>$item[$itemtoadd]['settings']));
 		$typeid = $DBH->lastInsertId();
 	} else if ($item[$itemtoadd]['type'] == "InlineText") {
 		//DB $query = "INSERT INTO imas_inlinetext (courseid,title,text,avail,startdate,enddate,oncal,caltag)";
@@ -438,6 +438,7 @@ function parsefile($file) {
 			case  "ONCAL":
 			case  "CALTAG":
 			case  "TARGET":
+			case  "ITEMDESCR":
 			case  "SETTINGS":
 				if (isset($part)) {
 					$item[$curid][$part] = rtrim($text);

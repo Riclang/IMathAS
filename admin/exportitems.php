@@ -262,8 +262,34 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 				echo $line['replyby'] . "\n";
 				echo "POSTBY\n";
 				echo $line['postby'] . "\n";
+				echo "CALTAG\n";
+				echo $line['caltag'] . "\n";
 				echo "SETTINGS\n";
 				foreach (array("defdisplay","points","cntingb","settings") as $setting) {
+					echo "$setting=".$line[$setting]."\n";
+				}
+				echo "END ITEM\n";
+				break;
+			case ($row[0]==="Drill"):
+				$stm2 = $DBH->prepare("SELECT * FROM imas_drillassess WHERE id=:id");
+				$stm2->execute(array(':id'=>$row[1]));
+				$line = $stm2->fetch(PDO::FETCH_ASSOC);
+				echo "NAME\n";
+				echo $line['name'] . "\n";
+				echo "SUMMARY\n";
+				echo $line['description'] . "\n";
+				echo "AVAIL\n";
+				echo $line['avail'] . "\n";
+				echo "STARTDATE\n";
+				echo $line['startdate'] . "\n";
+				echo "ENDDATE\n";
+				echo $line['enddate'] . "\n";
+				echo "CALTAG\n";
+				echo $line['caltag'] . "\n";
+				echo "ITEMDESCR\n";
+				echo $line['itemdescr'] . "\n";
+				echo "SETTINGS\n";
+				foreach (array("itemids","scoretype","showtype","n","showtostu") as $setting) {
 					echo "$setting=".$line[$setting]."\n";
 				}
 				echo "END ITEM\n";
