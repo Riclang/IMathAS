@@ -23,7 +23,7 @@ div.pagetitle h2, div.pagetitle h1 {
 div.item {
 	margin-bottom: 10px;
 	padding: 5px;
-	overflow: auto;
+	/*overflow: auto;*/
 	border-radius: 5px;
 }
 div.signup {
@@ -744,7 +744,7 @@ pre {
   position: relative;
 }
 .dropdown-toggle:focus {
-  outline: 0;
+  /*outline: 0;*/
 }
 .dropdown-menu {
   position: absolute;

@@ -641,6 +641,23 @@ function enditem($canedit) {
 
 			   if ($line['avail']==1 && $line['startdate']<$now && $line['enddate']>$now && $nothidden) { //regular show
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
+				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
+					echo " <li><a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=A&id=$typeid\">",_('Stats'),'</a></li>';
+					echo '</ul>';
+					echo '</div>';
+				   }
+				   
 				   if (($hideicons&1)==0) {
 					   if ($graphicalicons) {
 						   echo "<img alt=\"assessment\" class=\"floatleft\" src=\"$imasroot/img/{$itemicons['assess']}\" />";
