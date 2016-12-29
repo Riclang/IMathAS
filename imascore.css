@@ -23,7 +23,6 @@ div.pagetitle h2, div.pagetitle h1 {
 div.item {
 	margin-bottom: 10px;
 	padding: 5px;
-	/*overflow: auto;*/
 	border-radius: 5px;
 }
 div.signup {
@@ -34,6 +33,7 @@ div.signup {
 }
 div.itemsum {
 	margin-left: 45px;
+	overflow: auto;
 	/*margin-top: -.5em;
 	margin-bottom: -.5em;*/
 }
@@ -414,7 +414,7 @@ div.tips {
 	cursor: pointer;
 }
 a {
-	outline: none;
+	/*outline: none;*/
 }
 a:link:focus {
 	text-decoration: underline;
@@ -743,8 +743,14 @@ pre {
 .dropdown {
   position: relative;
 }
+.dropdown.floatright {
+	padding-left: 15px;
+}
 .dropdown-toggle:focus {
   /*outline: 0;*/
+}
+a.dropdown-toggle:hover {
+	text-decoration: none;
 }
 .dropdown-menu {
   position: absolute;

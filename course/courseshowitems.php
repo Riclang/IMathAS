@@ -131,7 +131,19 @@ function enditem($canedit) {
 						$astyle = '';
 					}
 					echo ">";
-
+					if ($canedit) {
+						echo '<div class="floatright dropdown">';
+						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo '</a>';
+						echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
+						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
+						
+						echo '</ul>';
+						echo '</div>';
+					}
 					if (($hideicons&16)==0) {
 						if ($ispublic) {
 							echo "<span class=left><a href=\"public.php?cid=$cid&folder=$parent-$bnum\" border=0>";
@@ -158,13 +170,13 @@ function enditem($canedit) {
 						echo "<br>$show ";
 						echo '</span>';
 					}
-					if ($canedit) {
+					/*if ($canedit) {
 						echo '<span class="instronly">';
 						echo "<a href=\"addblock.php?cid=$cid&id=$parent-$bnum\" $astyle>", _('Modify'), "</a> | <a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\" $astyle>", _('Delete'), "</a>";
 						echo " | <a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\" $astyle>", _('Copy'), "</a>";
 						echo " | <a href=\"course.php?cid=$cid&togglenewflag=$parent-$bnum\" $astyle>", _('NewFlag'), "</a>";
 						echo '</span>';
-					}
+					}*/
 					if (($hideicons&16)==0) {
 						echo "</div>";
 					}
@@ -186,7 +198,19 @@ function enditem($canedit) {
 						$astyle = '';
 					}
 					echo ">";
-
+					if ($canedit) {
+						echo '<div class="floatright dropdown">';
+						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo '</a>';
+						echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
+						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
+						
+						echo '</ul>';
+						echo '</div>';
+					}
 					if (($hideicons&16)==0) {
 						if ($ispublic) {
 						} else {
@@ -211,13 +235,13 @@ function enditem($canedit) {
 						echo "<br>$show ";
 						echo '</span>';
 					}
-					if ($canedit) {
+					/*if ($canedit) {
 						echo '<span class="instronly">';
 						echo "<a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Edit Contents'), "</a> | <a href=\"addblock.php?cid=$cid&id=$parent-$bnum\" $astyle>", _('Modify'), "</a> | <a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\" $astyle>", _('Delete'), "</a>";
 						echo " | <a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\" $astyle>", _('Copy'), "</a>";
 						echo " | <a href=\"course.php?cid=$cid&togglenewflag=$parent-$bnum\" $astyle>", _('NewFlag'), "</a>";
 						echo '</span>';
-					}
+					}*/
 					if (($hideicons&16)==0) {
 						echo "</div>";
 					}
@@ -240,7 +264,20 @@ function enditem($canedit) {
 					}
 					echo ' id="blockhead'.$items[$i]['id'].'"';
 					echo ">";
-
+					if ($canedit) {
+						echo '<div class="floatright dropdown">';
+						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo '</a>';
+						echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+						echo " <li><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a></li>";
+						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
+						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
+						
+						echo '</ul>';
+						echo '</div>';
+					}
 					//echo "<input class=\"floatright\" type=button id=\"but{$items[$i]['id']}\" value=\"";
 					//if ($isopen) {echo "Collapse";} else {echo "Expand";}
 					//echo "\" onClick=\"toggleblock('{$items[$i]['id']}','$parent-$bnum')\">\n";
@@ -270,13 +307,13 @@ function enditem($canedit) {
 						echo "<br>$show ";
 						echo '</span>';
 					}
-					if ($canedit) {
+					/*if ($canedit) {
 						echo '<span class="instronly">';
 						echo "<a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a> | <a href=\"addblock.php?cid=$cid&id=$parent-$bnum\" $astyle>", _('Modify'), "</a> | <a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\" $astyle>", _('Delete'), "</a>";
 						echo " | <a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\" $astyle>", _('Copy'), "</a>";
 						echo " | <a href=\"course.php?cid=$cid&togglenewflag=$parent-$bnum\" $astyle>", _('NewFlag'), "</a>";
 						echo '</span>';
-					}
+					}*/
 					if (($hideicons&16)==0) {
 						echo "</div>";
 					}
@@ -344,6 +381,19 @@ function enditem($canedit) {
 						$astyle = '';
 					}
 					echo ">";
+					if ($canedit) {
+						echo '<div class="floatright dropdown">';
+						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo '</a>';
+						echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
+						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
+						
+						echo '</ul>';
+						echo '</div>';
+					}
 					if (($hideicons&16)==0) {
 						echo "<span class=left><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" border=0>";
 						if ($graphicalicons) {
@@ -363,13 +413,13 @@ function enditem($canedit) {
 						echo "<br><i>$show</i> ";
 						echo '</span>';
 					}
-					if ($canedit) {
+					/*if ($canedit) {
 						echo '<span class="instronly">';
 						echo "<a href=\"addblock.php?cid=$cid&id=$parent-$bnum\" $astyle>", _('Modify'), "</a> | <a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\" $astyle>", _('Delete'), "</a>";
 						echo " | <a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a>";
 						echo " | <a href=\"course.php?cid=$cid&togglenewflag=$parent-$bnum\" $astyle>", _('NewFlag'), "</a>";
 						echo '</span>';
-					}
+					}*/
 
 					if (($hideicons&16)==0) {
 						echo "</div>";
@@ -391,6 +441,19 @@ function enditem($canedit) {
 						$astyle = '';
 					}
 					echo ">";
+					if ($canedit) {
+						echo '<div class="floatright dropdown">';
+						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo '</a>';
+						echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
+						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
+						
+						echo '</ul>';
+						echo '</div>';
+					}
 					if (($hideicons&16)==0) {
 						echo "<span class=left><a href=\"treereader.php?cid=$cid&folder=$parent-$bnum\" border=0>";
 						if ($graphicalicons) {
@@ -410,13 +473,13 @@ function enditem($canedit) {
 						echo "<br><i>$show</i> ";
 						echo '</span>';
 					}
-					if ($canedit) {
+					/*if ($canedit) {
 						echo '<span class="instronly">';
 						echo "<a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Edit Contents'), "</a> | <a href=\"addblock.php?cid=$cid&id=$parent-$bnum\" $astyle>", _('Modify'), "</a> | <a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\" $astyle>", _('Delete'), "</a>";
 						echo " | <a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a>";
 						echo " | <a href=\"course.php?cid=$cid&togglenewflag=$parent-$bnum\" $astyle>", _('NewFlag'), "</a>";
 						echo '</span>';
-					}
+					}*/
 
 					if (($hideicons&16)==0) {
 						echo "</div>";
@@ -440,7 +503,20 @@ function enditem($canedit) {
 					}
 					echo ' id="blockhead'.$items[$i]['id'].'"';
 					echo ">";
-
+					if ($canedit) {
+						echo '<div class="floatright dropdown">';
+						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo '</a>';
+						echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+						echo " <li><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a></li>";
+						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
+						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
+						
+						echo '</ul>';
+						echo '</div>';
+					}
 					//echo "<input class=\"floatright\" type=button id=\"but{$items[$i]['id']}\" value=\"";
 					//if ($isopen) {echo "Collapse";} else {echo "Expand";}
 					//echo "\" onClick=\"toggleblock('{$items[$i]['id']}','$parent-$bnum')\">\n";
@@ -475,14 +551,14 @@ function enditem($canedit) {
 						echo "<br><i>$show</i> ";
 						echo '</span>';
 					}
-					if ($canedit) {
+					/*if ($canedit) {
 						echo '<span class="instronly">';
 						echo "<a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a> | <a href=\"addblock.php?cid=$cid&id=$parent-$bnum\" $astyle>", _('Modify'), "</a>";
 						echo " | <a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\" $astyle>", _('Delete'), "</a>";
 						echo " | <a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a>";
 						echo " | <a href=\"course.php?cid=$cid&togglenewflag=$parent-$bnum\" $astyle>", _('NewFlag'), "</a>";
 						echo '</span>';
-					}
+					}*/
 					if (($hideicons&16)==0) {
 						echo "</div>";
 					}
@@ -544,10 +620,20 @@ function enditem($canedit) {
 			   //echo "<div class=item>\n";
 			   beginitem($canedit);
 			   if ($canedit) {
-				   echo '<span class="instronly">';
+				   /*echo '<span class="instronly">';
 				   echo "<a href=\"addcalendar.php?id={$items[$i]}&block=$parent&cid=$cid&remove=true\">", _('Delete'), "</a>";
 				   echo " | <a id=\"mcelink\" href=\"managecalitems.php?cid=$cid\">", _('Manage Events'), "</a>";
 				   echo '</span>';
+				   */
+				echo '<div class="floatright dropdown">';
+				echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				echo '</a>';
+				echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				echo " <li><a href=\"addcalendar.php?id={$items[$i]}&block=$parent&cid=$cid&remove=true\">", _('Delete'), "</a></li>";
+				echo " <li><a id=\"mcelink\" href=\"managecalitems.php?cid=$cid\">", _('Manage Events'), "</a></li>";
+				echo '</ul>';
+				echo '</div>';
 			   }
 			   showcalendar("course");
 			   enditem($canedit);// echo "</div>";
@@ -716,14 +802,14 @@ function enditem($canedit) {
 
 					echo '<span class="instronly">';
 					if ($line['allowlate']>0) {
-						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> |';
+						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> ';
 					}
-					echo " <i><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></i> | <a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></i> \n";
+					/*echo " <i><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></i> | <a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></i> \n";
 					echo " | <a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
 					echo " | <a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a>";
 					echo " | <a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a>";
 					echo " | <a href=\"contentstats.php?cid=$cid&type=A&id=$typeid\">",_('Stats'),'</a>';
-
+					*/
 					echo '</span>';
 
 				   } else if (($line['allowlate']%10==1 || $line['allowlate']%10-1>$latepasscnt) && $latepasses>0) {
@@ -741,6 +827,22 @@ function enditem($canedit) {
 
 			   } else if ($line['avail']==1 && $line['enddate']<$now && $line['reviewdate']>$now) { //review show // && $nothidden
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
+				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
+					echo " <li><a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=A&id=$typeid\">",_('Stats'),'</a></li>';
+					echo '</ul>';
+					echo '</div>';
+				   }
+				   
 				   if (($hideicons&1)==0) {
 					   if ($graphicalicons) {
 						   echo "<img alt=\"assessment\" class=\"floatleft\" src=\"$imasroot/img/{$itemicons['assess']}\" />";
@@ -763,14 +865,14 @@ function enditem($canedit) {
 				   if ($canedit) {
 					echo '<span class="instronly">';
 					if ($line['allowlate']>0) {
-						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">LP</span> |';
+						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">LP</span> ';
 					}
-				   	echo " <i><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></i> | <a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a>\n";
+				   	/*echo " <i><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></i> | <a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a>\n";
 					echo " | <a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
 					echo " | <a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a>";
 					echo " | <a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a>";
 					echo " | <a href=\"contentstats.php?cid=$cid&type=A&id=$typeid\">",_('Stats'),'</a>';
-
+					*/
 					echo '</span>';
 
 				   } else if (isset($sessiondata['stuview']) && $line['allowlate']>10 && ($now - $line['enddate'])<$latepasshrs*3600) {
@@ -812,6 +914,21 @@ function enditem($canedit) {
 					   }
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
+				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
+					echo " <li><a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=A&id=$typeid\">",_('Stats'),'</a></li>';
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if (($hideicons&1)==0) {
 
 					   if ($graphicalicons) {
@@ -828,14 +945,14 @@ function enditem($canedit) {
 
 					   echo '<span class="instronly">';
 					   if ($line['allowlate']>0) {
-						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> | ';
+						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> ';
 					   }
-					   echo "<a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a> | <a href=\"addassessment.php?id=$typeid&cid=$cid\">", _('Settings'), "</a> | \n";
+					   /*echo "<a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a> | <a href=\"addassessment.php?id=$typeid&cid=$cid\">", _('Settings'), "</a> | \n";
 					   echo "<a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
 					   echo " | <a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a>";
 					   echo " | <a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a>";
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=A&id=$typeid\">",_('Stats'),'</a>';
-
+					   */
 					   echo '</span>';
 				   }
 				   echo filter("</div><div class=itemsum>{$line['summary']}</div>\n");
@@ -925,6 +1042,21 @@ function enditem($canedit) {
 					   $color = makecolor2($line['startdate'],$line['enddate'],$now);
 				   }
 				   beginitem($canedit,'inline'.$typeid);// echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					if (strpos($line['text'],'<a')!==false) {
+						echo " <li><a href=\"contentstats.php?cid=$cid&type=I&id=$typeid\">",_('Stats'),'</a></li>';
+					}
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if ($line['title']!='##hidden##') {
 					   if (($hideicons&2)==0) {
 						   if ($graphicalicons) {
@@ -939,7 +1071,7 @@ function enditem($canedit) {
 						   echo "<br/>$show ";
 						   echo '</span>';
 					   }
-					   if ($canedit) {
+					   /*if ($canedit) {
 						   echo '<span class="instronly">';
 						   echo "<a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 						   echo "<a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -949,7 +1081,7 @@ function enditem($canedit) {
 						   }
 
 						   echo '</span>';
-					   }
+					   }*/
 					   echo "</div>";
 				   } else {
 					   if ($viewall) {
@@ -957,13 +1089,13 @@ function enditem($canedit) {
 						   echo "<br/>$show ";
 						   echo '</span>';
 					   }
-					   if ($canedit) {
+					   /*if ($canedit) {
 						   echo '<span class="instronly">';
 						   echo "<a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 						   echo "<a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
 						   echo " | <a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a>";
 						   echo '</span>';
-					   }
+					   }*/
 
 				   }
 				   echo filter("<div class=itemsum>{$line['text']}\n");
@@ -997,6 +1129,21 @@ function enditem($canedit) {
 					   $show = sprintf(_('Showing %1$s until %2$s'), $startdate, $enddate);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					if (strpos($line['text'],'<a')!==false) {
+						echo " <li><a href=\"contentstats.php?cid=$cid&type=I&id=$typeid\">",_('Stats'),'</a></li>';
+					}
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if ($line['title']!='##hidden##') {
 					   if ($graphicalicons) {
 						   echo "<img alt=\"text item\" class=\"floatleft faded\" src=\"$imasroot/img/{$itemicons['inline']}\" />";
@@ -1010,7 +1157,7 @@ function enditem($canedit) {
 				   echo '<span class="instrdates">';
 				   echo "<i>$show</i> ";
 				   echo '</span>';
-				   if ($canedit) {
+				   /*if ($canedit) {
 					   echo '<span class="instronly">';
 					   echo "<a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1020,7 +1167,7 @@ function enditem($canedit) {
 					   }
 
 					   echo '</span>';
-				   }
+				   }*/
 				   echo filter("</div><div class=itemsum>{$line['text']}\n");
 				   //DB $query = "SELECT id,description,filename FROM imas_instr_files WHERE itemid='$typeid'";
 				   //DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
@@ -1085,6 +1232,20 @@ function enditem($canedit) {
 					   $color = makecolor2($line['startdate'],$line['enddate'],$now);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"gb-viewdrill.php?cid=$cid&daid=$typeid\">", _('Scores'), '</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if (($hideicons&4)==0) {
 					   if ($graphicalicons) {
 						  echo "<img alt=\"Drill\" class=\"floatleft\" src=\"$imasroot/img/{$itemicons['drill']}\" />";
@@ -1102,7 +1263,7 @@ function enditem($canedit) {
 					   echo "<br/>$show";
 				   }
 
-				   if ($canedit) {
+				   /*if ($canedit) {
 					   echo '<span class="instronly">';
 					   echo "<a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1110,7 +1271,7 @@ function enditem($canedit) {
 					   echo " | <a href=\"gb-viewdrill.php?cid=$cid&daid=$typeid\">", _('Scores'), "</a>";
 
 					   echo '</span>';
-				   }
+				   }*/
 				   echo filter("</div><div class=itemsum>{$line['summary']}</div>\n");
 				   enditem($canedit); //echo "</div>\n";
 			   } else if ($viewall) {
@@ -1120,6 +1281,20 @@ function enditem($canedit) {
 					   $show = sprintf(_('Showing %1$s until %2$s'), $startdate, $enddate);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"gb-viewdrill.php?cid=$cid&daid=$typeid\">", _('Scores'), '</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				  if ($graphicalicons) {
 					  echo "<img alt=\"Drill\" class=\"floatleft faded\" src=\"$imasroot/img/{$itemicons['drill']}\" />";
 				  } else {
@@ -1130,7 +1305,7 @@ function enditem($canedit) {
 				   echo '<span class="instrdates">';
 				   echo "<br/><i>$show</i> ";
 				   echo '</span>';
-				   if ($canedit) {
+				   /*if ($canedit) {
 					  echo '<span class="instronly">';
 					   echo "<a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1138,7 +1313,7 @@ function enditem($canedit) {
 					   echo " | <a href=\"gb-viewdrill.php?cid=$cid&daid=$typeid\">", _('Scores'), "</a>";
 
 					   echo '</span>';
-				   }
+				   }*/
 				   echo filter("</div><div class=itemsum>{$line['summary']}</div>\n");
 				   enditem($canedit); // echo "</div>\n";
 			   }
@@ -1231,6 +1406,20 @@ function enditem($canedit) {
 					   $color = makecolor2($line['startdate'],$line['enddate'],$now);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=L&id=$typeid\">",_('Stats'),'</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if (($hideicons&4)==0) {
 					   if ($graphicalicons) {
 						  echo "<img alt=\"link to $icon\" class=\"floatleft\" src=\"$imasroot/img/{$itemicons[$icon]}\" />";
@@ -1250,7 +1439,7 @@ function enditem($canedit) {
 					   echo "<br/>$show ";
 					   echo '</span>';
 				   }
-				   if ($canedit) {
+				   /*if ($canedit) {
 					   echo '<span class="instronly">';
 					   echo "<a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1258,7 +1447,7 @@ function enditem($canedit) {
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=L&id=$typeid\">",_('Stats'),'</a>';
 
 					   echo '</span>';
-				   }
+				   }*/
 				   echo filter("</div><div class=itemsum>{$line['summary']}</div>\n");
 				   enditem($canedit); //echo "</div>\n";
 			   } else if ($viewall) {
@@ -1268,6 +1457,20 @@ function enditem($canedit) {
 					   $show = sprintf(_('Showing %1$s until %2$s'), $startdate, $enddate);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=L&id=$typeid\">",_('Stats'),'</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				  if ($graphicalicons) {
 					  echo "<img alt=\"link to $icon\" class=\"floatleft faded\" src=\"$imasroot/img/{$itemicons[$icon]}\" />";
 				  } else {
@@ -1278,7 +1481,7 @@ function enditem($canedit) {
 				   echo '<span class="instrdates">';
 				   echo "<br/><i>$show</i> ";
 				   echo '</span>';
-				   if ($canedit) {
+				   /*if ($canedit) {
 					   echo '<span class="instronly">';
 					   echo "<a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1286,7 +1489,7 @@ function enditem($canedit) {
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=L&id=$typeid\">",_('Stats'),'</a>';
 
 					   echo '</span>';
-				   }
+				   }*/
 				   echo filter("</div><div class=itemsum>{$line['summary']}</div>\n");
 				   enditem($canedit); // echo "</div>\n";
 			   }
@@ -1405,6 +1608,20 @@ function enditem($canedit) {
 				   	   }
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=F&id=$typeid\">",_('Stats'),'</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if (($hideicons&8)==0) {
 					   if ($graphicalicons) {
 						   echo "<img alt=\"forum\" class=\"floatleft\" src=\"$imasroot/img/{$itemicons['forum']}\" />";
@@ -1425,13 +1642,13 @@ function enditem($canedit) {
 				   if ($canedit) {
 					   echo '<span class="instronly">';
 					   if ($line['allowlate']>0) {
-						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> | ';
+						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> ';
 					   }
-					   echo "<a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
+					   /*echo "<a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
 					   echo " | <a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a>";
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=F&id=$typeid\">",_('Stats'),'</a>';
-
+					   */
 					   echo '</span>';
 				   } else
 				   if ($duedates!='') {echo "<br/>$duedates";}
@@ -1457,6 +1674,20 @@ function enditem($canedit) {
 					   $show = sprintf(_('Showing %1$s until %2$s'), $startdate, $enddate);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=F&id=$typeid\">",_('Stats'),'</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if ($graphicalicons) {
 					   echo "<img alt=\"forum\" class=\"floatleft faded\" src=\"$imasroot/img/{$itemicons['forum']}\" />";
 				   } else {
@@ -1473,13 +1704,13 @@ function enditem($canedit) {
 				   if ($canedit) {
 					   echo '<span class="instronly">';
 					   if ($line['allowlate']>0) {
-						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> | ';
+						echo ' <span onmouseover="tipshow(this,\'', _('LatePasses Allowed'), '\')" onmouseout="tipout()">', _('LP'), '</span> ';
 					   }
-					   echo "<a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
+					   /*echo "<a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
 					   echo " | <a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a>";
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=F&id=$typeid\">",_('Stats'),'</a>';
-
+					   */
 					   echo '</span>';
 				   }
 				   echo filter("</div><div class=itemsum>{$line['description']}</div>\n");
@@ -1576,7 +1807,22 @@ function enditem($canedit) {
 				   if ($line['editbydate']>$now && $line['editbydate']!=2000000000) {
 					   $duedates .= sprintf(_('Edits due by %s. '), formatdate($line['editbydate']));
 				   }
-				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=W&id=$typeid\">",_('Stats'),'</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
+				   
 				   if (($hideicons&8)==0) {
 					   if ($graphicalicons) {
 						   echo "<img alt=\"wiki\" class=\"floatleft\" src=\"$imasroot/img/{$itemicons['wiki']}\" />";
@@ -1603,7 +1849,7 @@ function enditem($canedit) {
 					   echo "<br/>$show ";
 					   echo '</span>';
 				   }
-				   if ($canedit) {
+				   /*if ($canedit) {
 					   echo '<span class="instronly">';
 					   echo "<a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1611,7 +1857,7 @@ function enditem($canedit) {
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=W&id=$typeid\">",_('Stats'),'</a>';
 
 					   echo '</span>';
-				   }
+				   }*/
 				   if ($duedates!='') {echo "<br/>$duedates";}
 				   echo filter("</div><div class=itemsum>{$line['description']}</div>\n");
 				   enditem($canedit); //echo "</div>\n";
@@ -1622,6 +1868,20 @@ function enditem($canedit) {
 					   $show = sprintf(_('Showing %1$s until %2$s'), $startdate, $enddate);
 				   }
 				   beginitem($canedit,$items[$i]); //echo "<div class=item>\n";
+				   if ($canedit) {
+				   	echo '<div class="floatright dropdown">';
+				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
+				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo '</a>';
+				   	echo '<ul class="dropdown-menu pull-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
+				   	echo " <li><a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
+				   	echo " <li><a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
+					echo " <li><a href=\"contentstats.php?cid=$cid&type=W&id=$typeid\">",_('Stats'),'</a></li>';
+					
+					echo '</ul>';
+					echo '</div>';
+				   }
 				   if ($graphicalicons) {
 					   echo "<img alt=\"wiki\" class=\"floatleft faded\" src=\"$imasroot/img/{$itemicons['wiki']}\" />";
 				   } else {
@@ -1634,7 +1894,7 @@ function enditem($canedit) {
 				   echo '<span class="instrdates">';
 				   echo "<br/><i>$show </i>";
 				   echo '</span>';
-				   if ($canedit) {
+				   /*if ($canedit) {
 					   echo '<span class="instronly">';
 					   echo "<a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a> | \n";
 					   echo "<a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a>\n";
@@ -1642,7 +1902,7 @@ function enditem($canedit) {
 					   echo " | <a href=\"contentstats.php?cid=$cid&type=W&id=$typeid\">",_('Stats'),'</a>';
 
 					   echo '</span>';
-				   }
+				   }*/
 				   echo filter("</div><div class=itemsum>{$line['description']}</div>\n");
 				   enditem($canedit); //echo "</div>\n";
 			   }
