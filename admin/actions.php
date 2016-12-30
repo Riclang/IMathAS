@@ -373,7 +373,7 @@ switch($_GET['action']) {
 			$cploc = $_POST['cploc'] + $_POST['cplocstu'] + $_POST['cplocview'];
 		}
 
-		$avail = 3 - $_POST['stuavail'] - $_POST['teachavail'];
+		$avail = 1 - $_POST['stuavail'];
 
 		$istemplate = 0;
 		if (($myspecialrights&1)==1 || $myrights==100) {

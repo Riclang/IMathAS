@@ -261,9 +261,7 @@ switch($_GET['action']) {
 		echo '<span class=form>Available?</span><span class=formright>';
 		echo '<input type="checkbox" name="stuavail" value="1" ';
 		if (($avail&1)==0) { echo 'checked="checked"';}
-		echo '/>Available to students<br/><input type="checkbox" name="teachavail" value="2" ';
-		if (($avail&2)==0) { echo 'checked="checked"';}
-		echo '/>Show on instructors\' home page</span><br class="form" />';
+		echo '/>Available to students</span><br class="form" />';
 		if ($_GET['action']=="modify") {
 			echo '<span class=form>Lock for assessment:</span><span class=formright><select name="lockaid">';
 			echo '<option value="0" ';

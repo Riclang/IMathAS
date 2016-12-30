@@ -603,18 +603,19 @@ function removemultiselect(el) {
 	p.remove();
 }
 
-function hidefromcourselist(el,cid) {
+function hidefromcourselist(el,cid,type) {
 	if (confirm("Are you SURE you want to hide this course from your course list?")) {
 		jQuery.ajax({
 				type: "GET",
-				url: imasroot+'/admin/hidefromcourselist.php?cid='+cid
+				url: imasroot+'/admin/hidefromcourselist.php?cid='+cid+'&type='+type
 		}).done(function(msg) {
 			if (msg=='OK') {
-				jQuery(el).parent().slideUp();
-				jQuery('#unhidelink').show();
+				jQuery(el).closest("ul.courselist > li").slideUp();
+				jQuery('#unhidelink'+type).show();
 			}
 		});
 	}
+	return false;
 }
 
 function rotateimg(el) {
