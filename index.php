@@ -51,7 +51,23 @@ $placeinhead = '
   	}
   </style>';
 $placeinhead .= "<script type=\"text/javascript\" src=\"$imasroot/javascript/tablesorter.js\"></script>\n";
-
+$placeinhead .= '<script type="text/javascript">$(function() {
+  var html = \'<div class="floatright dropdown"><a role="button" tabindex=0 class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><img src="img/gears.png" alt="Options"/></a>\';
+  html += \'<ul role="menu" class="dropdown-menu dropdown-menu-right">\';
+  $(".courselist-teach li").css("clear","both").each(function (i,el) {
+  	if ($(el).attr("data-isowner")=="true") {
+  		var cid = $(el).attr("data-cid");
+  		var thishtml = html + \' <li><a href="admin/forms.php?action=modify&id=\'+cid+\'">'._('Settings').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?action=chgteachers&id=\'+cid+\'">'._('Add/remove teachers').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?action=transfer&id=\'+cid+\'">'._('Transfer ownership').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?action=delete&id=\'+cid+\'">'._('Delete').'</a></li>\';
+  		thishtml += \'</ul></div>\';
+  		$(el).prepend(thishtml);
+  	}
+  });prepend(html);
+  $(".dropdown-toggle").dropdown();
+  });
+  </script>';
 $nologo = true;
 
 
@@ -138,7 +154,7 @@ if ($myrights>10) {
 	//DB $query .= "AND (imas_courses.available=0 OR imas_courses.available=1) ORDER BY imas_courses.name";
 	//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 	//DB if (mysql_num_rows($result)==0) {
-	$query = "SELECT imas_courses.name,imas_courses.id,imas_courses.available,imas_courses.lockaid FROM imas_teachers,imas_courses ";
+	$query = "SELECT imas_courses.name,imas_courses.id,imas_courses.available,imas_courses.lockaid,imas_courses.ownerid FROM imas_teachers,imas_courses ";
 	$query .= "WHERE imas_teachers.courseid=imas_courses.id AND imas_teachers.userid=:userid ";
 	$query .= "AND (imas_courses.available=0 OR imas_courses.available=1) ORDER BY imas_courses.name";
 	$stm = $DBH->prepare($query);
@@ -420,24 +436,22 @@ require('./footer.php');
 
 
 function printCourses($data,$title,$type=null) {
-	global $shownewmsgnote, $shownewpostnote, $stuhashiddencourses,$imasroot;
+	global $shownewmsgnote, $shownewpostnote, $stuhashiddencourses,$imasroot,$userid;
 	if (count($data)==0 && $type=='tutor') {return;}
 	global $myrights,$showmessagesgadget,$showpostsgadget,$newmsgcnt,$newpostcnt;
 	echo '<div role="navigation" aria-label="'.$title.'">';
 	echo '<div class="block"><h3>'.$title.'</h3></div>';
-	echo '<div class="blockitems"><ul class="nomark courselist">';
+	echo '<div class="blockitems"><ul class="nomark courselist courselist-'.$type.'">';
 	for ($i=0; $i<count($data); $i++) {
-		echo '<li>';
+		echo '<li';
+		if ($type=='teach') {
+			echo ' data-isowner="'.($data[$i]['ownerid']==$userid?'true':'false').'"';
+			echo ' data-cid="'.$data[$i]['id'].'"';
+		}
+		echo '>';
 		if ($type=='take') {
 			echo '<span class="delx" onclick="return hidefromcourselist(this,'.$data[$i]['id'].');" title="'._("Hide from course list").'">x</span>';
-		} /*else if ($type=='teach') {
-			echo '<div class="floatright clear dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><img src="'.$imasroot.'/img/gears.png" alt="Settings"/></a>';
-			echo '<ul class="dropdown-menu dropdown-menu-right">';
-			echo '<li><a>Do something one</a></li>';
-			echo '<li><a>Add/Remove Teachers</a></li>';
-			echo '<li><a>Something else</a></li>';
-			echo '</ul></div>';
-		}*/
+		} 
 		echo '<a href="course/course.php?folder=0&cid='.$data[$i]['id'].'">';
 		echo $data[$i]['name'].'</a>';
 		if (isset($data[$i]['available']) && (($data[$i]['available']&1)==1)) {

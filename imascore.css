@@ -479,11 +479,11 @@ ul.courselist {
 	margin-left: 0px;
 	margin-top: 0px;
 }
-ul.courselist li {
+ul.courselist > li {
 	border-bottom: 1px solid #999;
 	padding: 1px 5px;
 }
-ul.courselist li:last-child {
+ul.courselist > li:last-child {
 	border: 0;
 	margin-bottom: 15px;
 }
