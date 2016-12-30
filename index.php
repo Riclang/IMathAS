@@ -458,7 +458,7 @@ function printCourses($data,$title,$type=null,$hashiddencourses=false) {
 		}
 		echo '>';
 		if ($type != 'teach' || $data[$i]['ownerid']!=$userid) {
-			echo '<span class="delx" onclick="return hidefromcourselist(this,'.$data[$i]['id'].',\''.$type.'\');" title="'._("Hide from course list").'">x</span>';
+			echo '<span class="delx" onclick="return hidefromcourselist(this,'.$data[$i]['id'].',\''.$type.'\');" title="'._("Hide from course list").'" aria-label="'._("Hide from course list").'">x</span>';
 		} 
 		echo '<a href="course/course.php?folder=0&cid='.$data[$i]['id'].'">';
 		echo $data[$i]['name'].'</a>';

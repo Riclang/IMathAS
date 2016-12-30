@@ -37,7 +37,7 @@ if (isset($_GET['cid'])) {
 //DB $query .= "WHERE istu.userid='$userid' AND istu.hidefromcourselist=1";
 //DB $result = mysql_query($query) or die("Query failed : $query" . mysql_error());
 $query = 'SELECT ic.name,ic.id FROM imas_courses AS ic JOIN '.$table.' AS istu ON ic.id=istu.courseid ';
-$query .= "WHERE istu.userid=:userid AND istu.hidefromcourselist=1";
+$query .= "WHERE istu.userid=:userid AND istu.hidefromcourselist=1 ORDER BY ic.name";
 $stm = $DBH->prepare($query);
 $stm->execute(array(':userid'=>$userid));
 echo '<ul class="nomark">';
