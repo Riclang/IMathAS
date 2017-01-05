@@ -77,7 +77,7 @@ function enditem($canedit) {
 			}
 			//DB $items[$i]['name'] = stripslashes($items[$i]['name']);;
 			if ($canedit) {
-				echo generatemoveselect($i,count($items),$parent,$blocklist);
+				//echo generatemoveselect($i,count($items),$parent,$blocklist);
 			}
 			if ($items[$i]['startdate']==0) {
 				$startdate = _('Always');
@@ -138,6 +138,7 @@ function enditem($canedit) {
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','B{$items[$i]['id']}');\">", _('Move'), '</a></li>';
 						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
 						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
 						
@@ -205,6 +206,7 @@ function enditem($canedit) {
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','B{$items[$i]['id']}');\">", _('Move'), '</a></li>';
 						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
 						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
 						
@@ -272,6 +274,7 @@ function enditem($canedit) {
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a></li>";
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','B{$items[$i]['id']}');\">", _('Move'), '</a></li>';
 						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
 						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
 						
@@ -388,6 +391,7 @@ function enditem($canedit) {
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','B{$items[$i]['id']}');\">", _('Move'), '</a></li>';
 						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
 						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
 						
@@ -448,6 +452,7 @@ function enditem($canedit) {
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','B{$items[$i]['id']}');\">", _('Move'), '</a></li>';
 						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
 						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
 						
@@ -511,6 +516,7 @@ function enditem($canedit) {
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a></li>";
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
+						echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','B{$items[$i]['id']}');\">", _('Move'), '</a></li>';
 						echo " <li><a href=\"deleteblock.php?cid=$cid&id=$parent-$bnum&remove=ask\">", _('Delete'), "</a></li>";
 						echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid=$parent-$bnum\">", _('Copy'), "</a></li>";
 						
@@ -613,7 +619,7 @@ function enditem($canedit) {
 		   $line = $stm->fetch(PDO::FETCH_ASSOC);
 
 		   if ($canedit) {
-			   echo generatemoveselect($i,count($items),$parent,$blocklist);
+			   //echo generatemoveselect($i,count($items),$parent,$blocklist);
 		   }
 		   if ($line['itemtype']=="Calendar") {
 			   if ($ispublic) { continue;}
@@ -631,6 +637,7 @@ function enditem($canedit) {
 				echo '</a>';
 				echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				echo " <li><a href=\"addcalendar.php?id={$items[$i]}&block=$parent&cid=$cid&remove=true\">", _('Delete'), "</a></li>";
+				echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
 				echo " <li><a id=\"mcelink\" href=\"managecalitems.php?cid=$cid\">", _('Manage Events'), "</a></li>";
 				echo '</ul>';
 				echo '</div>';
@@ -736,6 +743,7 @@ function enditem($canedit) {
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
 				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
+					echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
 					echo " <li><a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a></li>";
@@ -835,6 +843,7 @@ function enditem($canedit) {
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
 				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
+					echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
 					echo " <li><a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a></li>";
@@ -922,6 +931,7 @@ function enditem($canedit) {
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
 				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
+					echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
 					echo " <li><a href=\"deleteassessment.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"gb-itemanalysis.php?cid=$cid&asid=average&aid=$typeid\">", _('Grades'), "</a></li>";
@@ -1049,7 +1059,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					if (strpos($line['text'],'<a')!==false) {
 						echo " <li><a href=\"contentstats.php?cid=$cid&type=I&id=$typeid\">",_('Stats'),'</a></li>';
@@ -1136,7 +1147,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deleteinlinetext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					if (strpos($line['text'],'<a')!==false) {
 						echo " <li><a href=\"contentstats.php?cid=$cid&type=I&id=$typeid\">",_('Stats'),'</a></li>';
@@ -1239,7 +1251,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"gb-viewdrill.php?cid=$cid&daid=$typeid\">", _('Scores'), '</a></li>';
 					
@@ -1288,7 +1301,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deletedrillassess.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"gb-viewdrill.php?cid=$cid&daid=$typeid\">", _('Scores'), '</a></li>';
 					
@@ -1413,7 +1427,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"contentstats.php?cid=$cid&type=L&id=$typeid\">",_('Stats'),'</a></li>';
 					
@@ -1464,7 +1479,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deletelinkedtext.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"contentstats.php?cid=$cid&type=L&id=$typeid\">",_('Stats'),'</a></li>';
 					
@@ -1615,7 +1631,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"contentstats.php?cid=$cid&type=F&id=$typeid\">",_('Stats'),'</a></li>';
 					
@@ -1681,7 +1698,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deleteforum.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"contentstats.php?cid=$cid&type=F&id=$typeid\">",_('Stats'),'</a></li>';
 					
@@ -1815,7 +1833,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"contentstats.php?cid=$cid&type=W&id=$typeid\">",_('Stats'),'</a></li>';
 					
@@ -1875,7 +1894,8 @@ function enditem($canedit) {
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
-				   	echo " <li><a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
+				   	echo " <li><a href=\"#\" onclick=\"return moveDialog('$parent','{$items[$i]}');\">", _('Move'), '</a></li>';
+					echo " <li><a href=\"deletewiki.php?id=$typeid&block=$parent&cid=$cid&remove=ask\">", _('Delete'), "</a></li>";
 					echo " <li><a href=\"copyoneitem.php?cid=$cid&copyid={$items[$i]}\">", _('Copy'), "</a></li>";
 					echo " <li><a href=\"contentstats.php?cid=$cid&type=W&id=$typeid\">",_('Stats'),'</a></li>';
 					
