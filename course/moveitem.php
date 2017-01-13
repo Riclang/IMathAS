@@ -174,6 +174,7 @@ $placeinhead .= '<script type="text/javascript">
   var item = "'.$itemtomove.'";
   var block = "'.$curblock.'";
   </script>';
+$placeinhead .= '<style type="text/css"> select { max-width: 100%;} </style>';
 require("../header.php");
 
 ?>
