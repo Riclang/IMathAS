@@ -748,6 +748,9 @@ pre {
 .dropdown.floatright {
 	padding-left: 15px;
 }
+.dropdown-toggle {
+	cursor: pointer;
+}
 .dropdown-toggle:focus {
   /*outline: 0;*/
 }
