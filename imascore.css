@@ -24,6 +24,7 @@ div.item {
 	margin-bottom: 10px;
 	padding: 5px;
 	border-radius: 5px;
+	border-bottom: 1px solid #ccc;
 }
 div.signup {
 	border: 1px solid #000;
@@ -481,7 +482,7 @@ ul.courselist {
 }
 ul.courselist > li {
 	border-bottom: 1px solid #999;
-	padding: 1px 5px;
+	padding: 3px 5px 2px;
 }
 ul.courselist > li:last-child {
 	border: 0;
