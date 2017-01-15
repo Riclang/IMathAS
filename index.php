@@ -49,6 +49,7 @@ $placeinhead = '
    div.pagetitle h2 {
   	margin-top: 0px;
   	}
+   #homefullwidth { clear: both;}
   </style>';
 $placeinhead .= "<script type=\"text/javascript\" src=\"$imasroot/javascript/tablesorter.js\"></script>\n";
 $placeinhead .= '<script type="text/javascript">$(function() {
@@ -58,10 +59,10 @@ $placeinhead .= '<script type="text/javascript">$(function() {
   	if ($(el).attr("data-isowner")=="true") {
   		var cid = $(el).attr("data-cid");
   		var thishtml = html + \' <li><a href="#" onclick="hidefromcourselist(this,\'+cid+\',\\\'teach\\\');">'._('Hide from course list').'</a></li>\';
-  		thishtml += \' <li><a href="admin/forms.php?action=modify&id=\'+cid+\'">'._('Settings').'</a></li>\';
-  		thishtml += \' <li><a href="admin/forms.php?action=chgteachers&id=\'+cid+\'">'._('Add/remove teachers').'</a></li>\';
-  		thishtml += \' <li><a href="admin/forms.php?action=transfer&id=\'+cid+\'">'._('Transfer ownership').'</a></li>\';
-  		thishtml += \' <li><a href="admin/forms.php?action=delete&id=\'+cid+\'">'._('Delete').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?from=home&action=modify&id=\'+cid+\'">'._('Settings').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?from=home&action=chgteachers&id=\'+cid+\'">'._('Add/remove teachers').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?from=home&action=transfer&id=\'+cid+\'">'._('Transfer ownership').'</a></li>\';
+  		thishtml += \' <li><a href="admin/forms.php?from=home&action=delete&id=\'+cid+\'">'._('Delete').'</a></li>\';
   		thishtml += \'</ul></div>\';
   		$(el).prepend(thishtml);
   	} 
@@ -388,6 +389,9 @@ if ($myrights > 10) {
 } else if ($myrights > 9) {
 	echo " | <a href=\"help.php?section=usingimas\">", _('Help'), "</a>\n";
 }
+if ($myrights >=75) {
+	echo '<br/><a href="admin/admin.php">'._('Admin Page').'</a>';
+}
 
 echo '</div>';
 echo '<div class="pagetitle" id="headerhome" role="banner"><h2>';
@@ -452,12 +456,12 @@ function printCourses($data,$title,$type=null,$hashiddencourses=false) {
 	echo '<div class="blockitems"><ul class="nomark courselist courselist-'.$type.'">';
 	for ($i=0; $i<count($data); $i++) {
 		echo '<li';
-		if ($type=='teach') {
+		if ($type=='teach' && $myrights>39) {
 			echo ' data-isowner="'.($data[$i]['ownerid']==$userid?'true':'false').'"';
 			echo ' data-cid="'.$data[$i]['id'].'"';
 		}
 		echo '>';
-		if ($type != 'teach' || $data[$i]['ownerid']!=$userid) {
+		if ($type != 'teach' || $data[$i]['ownerid']!=$userid || $myrights<40) {
 			echo '<span class="delx" onclick="return hidefromcourselist(this,'.$data[$i]['id'].',\''.$type.'\');" title="'._("Hide from course list").'" aria-label="'._("Hide from course list").'">x</span>';
 		} 
 		echo '<a href="course/course.php?folder=0&cid='.$data[$i]['id'].'">';
@@ -478,7 +482,7 @@ function printCourses($data,$title,$type=null,$hashiddencourses=false) {
 		echo '</li>';
 	}
 	if ($type=='teach' && $myrights>39 && count($data)==0) {
-		echo '<li>', _('To add a course, head to the Admin Page'), '</li>';
+		echo '<li>', _('To add a course, click the button below'), '</li>';
 	} else if ($type=='teach' && $myrights<13 && $myrights>10 && count($data)==0) {
 		echo '<li>', _('Your instructor account has not been approved yet. Please be patient.'), '</li>';
 	}
@@ -486,12 +490,15 @@ function printCourses($data,$title,$type=null,$hashiddencourses=false) {
 	if ($type=='take') {
 		echo '<div class="center"><a class="abutton" href="forms.php?action=enroll">', _('Enroll in a New Class'), '</a></div>';
 	} else if ($type=='teach' && $myrights>39) {
-		echo '<div class="center"><a class="abutton" href="admin/admin.php">', _('Admin Page'), '</a></div>';
+		echo '<div class="center"><a class="abutton" href="admin/forms.php?from=home&action=addcourse">', _('Add New Course'), '</a></div>';
 	}
+	
 	echo '<div class="center">';
 	echo '<a id="unhidelink'.$type.'" '.($hashiddencourses?'':'style="display:none"').' class="small" href="admin/unhidefromcourselist.php?type='.$type.'">Unhide hidden courses</a>';
 	echo '</div>';
-	
+	if ($type=='teach' && $myrights>=75) {
+		echo '<div class="center"><a class="abutton" href="admin/admin.php">', _('Admin Page'), '</a></div>';
+	}
 	echo '</div>';
 	echo '</div>';
 }
