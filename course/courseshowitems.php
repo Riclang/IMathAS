@@ -134,7 +134,7 @@ function enditem($canedit) {
 					if ($canedit) {
 						echo '<div class="floatright dropdown">';
 						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
@@ -202,7 +202,7 @@ function enditem($canedit) {
 					if ($canedit) {
 						echo '<div class="floatright dropdown">';
 						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
@@ -269,7 +269,7 @@ function enditem($canedit) {
 					if ($canedit) {
 						echo '<div class="floatright dropdown">';
 						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a></li>";
@@ -387,7 +387,7 @@ function enditem($canedit) {
 					if ($canedit) {
 						echo '<div class="floatright dropdown">';
 						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
@@ -448,7 +448,7 @@ function enditem($canedit) {
 					if ($canedit) {
 						echo '<div class="floatright dropdown">';
 						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"addblock.php?cid=$cid&id=$parent-$bnum\">", _('Modify'), "</a></li>";
@@ -511,7 +511,7 @@ function enditem($canedit) {
 					if ($canedit) {
 						echo '<div class="floatright dropdown">';
 						echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-						echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+						echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 						echo '</a>';
 						echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 						echo " <li><a href=\"course.php?cid=$cid&folder=$parent-$bnum\" $astyle>", _('Isolate'), "</a></li>";
@@ -633,7 +633,7 @@ function enditem($canedit) {
 				   */
 				echo '<div class="floatright dropdown">';
 				echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				echo '</a>';
 				echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				echo " <li><a href=\"addcalendar.php?id={$items[$i]}&block=$parent&cid=$cid&remove=true\">", _('Delete'), "</a></li>";
@@ -737,8 +737,8 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
-				   	echo '</a>';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
+				   	echo '</a>'; 
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
 				   	echo " <li><a href=\"addassessment.php?id=$typeid&block=$parent&cid=$cid\">", _('Settings'), "</a></li>";
@@ -837,7 +837,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
@@ -925,7 +925,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addquestions.php?aid=$typeid&cid=$cid\">", _('Questions'), "</a></li>";
@@ -1054,7 +1054,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1142,7 +1142,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addinlinetext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1246,7 +1246,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1296,7 +1296,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"adddrillassess.php?daid=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1422,7 +1422,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1474,7 +1474,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addlinkedtext.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1626,7 +1626,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1693,7 +1693,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addforum.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1828,7 +1828,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
@@ -1889,7 +1889,7 @@ function enditem($canedit) {
 				   if ($canedit) {
 				   	echo '<div class="floatright dropdown">';
 				   	echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$i.'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
-				   	echo ' <img src="../img/gears.png" class="mida"/>&nbsp;<img src="../img/collapse.gif" width="10" class="mida" />';
+				   	echo ' <img src="../img/gearsdd.png" alt="Options" class="mida"/>';
 				   	echo '</a>';
 				   	echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$i.'">';
 				   	echo " <li><a href=\"addwiki.php?id=$typeid&block=$parent&cid=$cid\">", _('Modify'), "</a></li>";
