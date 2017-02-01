@@ -762,7 +762,7 @@ echo "</p>";
 					echo '<a tabindex=0 class="dropdown-toggle" id="dropdownMenu'.$line['id'].'" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">';
 					echo ' <img src="../img/gears.png" class="mida" alt="Options"/>';
 					echo '</a>';
-					echo '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenu'.$line['id'].'">';	
+					echo '<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu'.$line['id'].'">';	
 					
 					if ($isteacher) {
 						echo "<li><a href=\"thread.php?page=$page&cid=$cid&forum={$line['forumid']}&move={$line['id']}\">Move</a></li> ";
