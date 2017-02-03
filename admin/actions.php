@@ -1019,6 +1019,26 @@ switch($_POST['action']) {
 		$stm = $DBH->prepare("DELETE FROM imas_users WHERE id=:id");
 		$stm->execute(array(':id'=>$_GET['id']));
 		break;
+	case "modfedpeers":
+		if ($myrights <100) { echo "You don't have the authority for this action"; break;}
+		if ($_GET['id']=='new') {
+			$query = "INSERT INTO imas_federation_peers (peername,peerdescription,secret,url,lastpull) VALUES ";
+			$query .= "(:peername, :peerdescription, :secret, :url, 0)";
+			$stm = $DBH->prepare($query);
+			$stm->execute(array(':peername'=>$_POST['peername'], ':peerdescription'=>$_POST['peerdescription'], 
+				':secret'=>$_POST['secret'], ':url'=>$_POST['url']));
+		} else {
+			$query = "UPDATE imas_federation_peers SET peername=:peername,peerdescription=:peerdescription,secret=:secret,url=:url WHERE id=:id";
+			$stm = $DBH->prepare($query);
+			$stm->execute(array(':peername'=>$_POST['peername'], ':peerdescription'=>$_POST['peerdescription'], 
+				':secret'=>$_POST['secret'], ':url'=>$_POST['url'], ':id'=>$_GET['id']));
+		}
+		break;
+	case "delfedpeers":
+		if ($myrights <100) { echo "You don't have the authority for this action"; break;}
+		$stm = $DBH->prepare("DELETE FROM imas_federation_peers WHERE id=:id");
+		$stm->execute(array(':id'=>$_GET['id']));
+		break;
 	case "removediag";
 		if ($myrights <60) { echo "You don't have the authority for this action"; break;}
 		$stm = $DBH->prepare("SELECT imas_users.id,imas_users.groupid FROM imas_users JOIN imas_diags ON imas_users.id=imas_diags.ownerid AND imas_diags.id=:id");

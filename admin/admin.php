@@ -354,7 +354,10 @@ $placeinhead .= '</script>';
 	if ($enablebasiclti) {
 		echo "<a href=\"forms.php?action=listltidomaincred\">LTI Provider Creds</a><br/>\n";
 	}
+	echo "<a href=\"forms.php?action=listfedpeers\">Federation Peers</a><br/>\n";
 	echo "<a href=\"externaltools.php?cid=admin\">External Tools</a><br/>\n";
+	echo '</span>';
+	echo '<span class="column">';
 	echo "<a href=\"../util/utils.php\">Admin Utilities</a><br/>\n";
 	echo '</span>';
 
