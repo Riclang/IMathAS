@@ -535,7 +535,7 @@ if (!(isset($teacherid)) && $myrights<75) {
 				if (!isset($libs[$libid])) { $libs[$libid]=0;} //assign questions to unassigned if library is closed.  Shouldn't ever trigger
 				//DB $query = "SELECT qsetid FROM imas_library_items WHERE libid={$libs[$libid]}";
 				//DB $result = mysql_query($query) or die("error on: $query: " . mysql_error());
-				$stm = $DBH->prepare("SELECT qsetid FROM imas_library_items WHERE libid=:libid");
+				$stm = $DBH->prepare("SELECT qsetid FROM imas_library_items WHERE libid=:libid AND deleted=0");
 				$stm->execute(array(':libid'=>$libs[$libid]));
 				$existingli = array();
 				//DB while ($row = mysql_fetch_row($result)) {
