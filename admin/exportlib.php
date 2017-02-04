@@ -115,7 +115,7 @@ if (!(isset($teacherid)) && $myrights<20) {
 			//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 			//DB if (mysql_num_rows($result)>0) {
 				//DB while ($row = mysql_fetch_row($result)) {
-			$query = "SELECT id,name,uniqueid,lastmoddate FROM imas_libraries WHERE parent=:parent";
+			$query = "SELECT id,name,uniqueid,lastmoddate FROM imas_libraries WHERE parent=:parent AND deleted=0";
 			if ($nonpriv) {
         $query .= " AND userights>0";
       }
@@ -158,7 +158,7 @@ if (!(isset($teacherid)) && $myrights<20) {
 		//$libitems is newlibid=>newqsetid
 		$query = "SELECT imas_library_items.qsetid,imas_library_items.libid FROM imas_library_items ";
 		$query .= "JOIN imas_questionset ON imas_library_items.qsetid=imas_questionset.id ";
-		$query .= "WHERE imas_library_items.libid IN ($liblist) AND imas_library_items.junkflag=0 AND imas_questionset.deleted=0 ";
+		$query .= "WHERE imas_library_items.libid IN ($liblist) AND imas_library_items.junkflag=0  AND imas_library_items.deleted=0 AND imas_questionset.deleted=0 ";
 		if ($nonpriv) {
 			$query .= " AND imas_questionset.userights>0";
 		}

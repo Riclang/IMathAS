@@ -218,7 +218,7 @@ if ($myrights<20) {
 					$libarray = array();
 				}
 				//DB $chglist = "'".implode("','",$libarray)."'";
-        $chglist = implode(',', array_map('intval', $libarray));
+				$chglist = implode(',', array_map('intval', $libarray));
 
 				$alllibs = array();
 				//DB $query = "SELECT qsetid,libid FROM imas_library_items WHERE qsetid IN ($chglist)";
@@ -240,21 +240,21 @@ if ($myrights<20) {
 				} else {
 					if (!$isadmin) {
 						//unassigned, or owner and lib not closed or mine
-            //DB $query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
-  					//DB $query .= "ili.libid=il.id WHERE ili.qsetid IN ($chglist)";
+						//DB $query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
+						//DB $query .= "ili.libid=il.id WHERE ili.qsetid IN ($chglist)";
 						//DB $query .= " AND ((ili.ownerid='$userid' AND (il.ownerid='$userid' OR il.userights%3<>1)) OR ili.libid=0)";
-            $query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
-  					$query .= "ili.libid=il.id WHERE ili.qsetid IN ($chglist) ";
-						$query .= "AND ((ili.ownerid=:ownerid AND (il.ownerid=:ownerid2 OR il.userights%3<>1)) OR ili.libid=0)";
+						$query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
+						$query .= "ili.libid=il.id AND il.deleted=0 WHERE ili.qsetid IN ($chglist) ";
+						$query .= "AND ((ili.ownerid=:ownerid AND (il.ownerid=:ownerid2 OR il.userights%3<>1)) OR ili.libid=0) AND ili.deleted=0";
 						$stm = $DBH->prepare($query);
 						$stm->execute(array(':ownerid'=>$userid, ':ownerid2'=>$userid));
 					} else {
-            //DB $query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
-  					//DB $query .= "ili.libid=il.id WHERE ili.qsetid IN ($chglist)";
-            $query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
-  					$query .= "ili.libid=il.id WHERE ili.qsetid IN ($chglist)";
-  					$stm = $DBH->query($query);
-          }
+						//DB $query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
+						//DB $query .= "ili.libid=il.id WHERE ili.qsetid IN ($chglist)";
+  						$query = "SELECT ili.qsetid,ili.libid FROM imas_library_items AS ili LEFT JOIN imas_libraries AS il ON ";
+  						$query .= "ili.libid=il.id AND il.deleted=0 WHERE ili.qsetid IN ($chglist) AND ili.deleted=0";
+  						$stm = $DBH->query($query);
+  					}
 				}
 				$mylibs = array();
 				//DB $result = mysql_query($query) or die("Query failed : $query" . mysql_error());
@@ -269,8 +269,8 @@ if ($myrights<20) {
 					remove any additions that already exist
 					add to new libraries
 					*/
-          $ins_stm = $DBH->prepare("INSERT INTO imas_library_items (libid,qsetid,ownerid) VALUES (:libid, :qsetid, :ownerid)");
-          $del_stm = $DBH->prepare("DELETE FROM imas_library_items WHERE qsetid=:qsetid AND libid=0");
+					$ins_stm = $DBH->prepare("INSERT INTO imas_library_items (libid,qsetid,ownerid) VALUES (:libid, :qsetid, :ownerid)");
+					$del_stm = $DBH->prepare("DELETE FROM imas_library_items WHERE qsetid=:qsetid AND libid=0");
 
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which checked libraries it's not already in
@@ -873,7 +873,7 @@ if ($myrights<20) {
 		}
 
 		//DB $llist = "'".implode("','",explode(',',$searchlibs))."'";
-    $llist = implode(',', array_map('intval', explode(',',$searchlibs)));
+		$llist = implode(',', array_map('intval', explode(',',$searchlibs)));
 
 		$libsortorder = array();
 		if (substr($searchlibs,0,1)=="0") {

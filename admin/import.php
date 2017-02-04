@@ -195,7 +195,7 @@ if (!(isset($teacherid)) && $myrights<75) {
 			//DB $query = "SELECT libid,qsetid FROM imas_library_items WHERE qsetid IN ($checkli)";
 			//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 			//DB while ($row = mysql_fetch_row($result)) {
-			$stm = $DBH->query("SELECT libid,qsetid FROM imas_library_items WHERE qsetid IN ($checkli)");
+			$stm = $DBH->query("SELECT libid,qsetid FROM imas_library_items WHERE qsetid IN ($checkli) AND deleted=0");
 			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 				$dontaddli[$row[0]] = $row[1]; //prevent adding library items for existing pairs
 			}
