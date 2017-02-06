@@ -328,13 +328,12 @@ $placeinhead .= '</script>';
 	<div class=cp>
 	<span class=column>
 	<a href="../course/manageqset.php?cid=admin">Manage Question Set</a><BR>
-	<a href="export.php?cid=admin">Export Question Set</a><BR>
-	<a href="import.php?cid=admin">Import Question Set</a><BR>
+	<a href="../course/managelibs.php?cid=admin">Manage Libraries</a>
 	</span>
 	<span class=column>
-	<a href="../course/managelibs.php?cid=admin">Manage Libraries</a><br>
 	<a href="exportlib.php?cid=admin">Export Libraries</a><BR>
-	<a href="importlib.php?cid=admin">Import Libraries</a></span>
+	<a href="importlib.php?cid=admin">Import Libraries</a>
+	</span>
 <?php
 		if ($myrights == 100) {
 ?>
