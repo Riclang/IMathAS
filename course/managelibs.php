@@ -51,21 +51,22 @@ if ($myrights<20) {
 		if (isset($_GET['confirmed'])) {
 			if ($_POST['remove']!='') {
 				$remlist = implode(',' , array_map('intval', explode(',',$_POST['remove'])));
-				
+				echo "ok: $remlist";
 				if (!$isadmin) {
 					if ($isgrpadmin) {
 						$stm = $DBH->prepare("SELECT id FROM imas_libraries WHERE id IN ($remlist) AND groupid=:groupid");
 						$stm->execute(array(':groupid'=>$groupid));
 					} else {
-						$stm = $DBH->prepare("SELECT id imas_libraries WHERE id IN ($remlist) AND ownerid=:ownerid");
+						$stm = $DBH->prepare("SELECT id FROM imas_libraries WHERE id IN ($remlist) AND ownerid=:ownerid");
 						$stm->execute(array(':ownerid'=>$userid));	
 					}
+					$oklib = array();
 					while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 						$oklib[] = $row[0];
 					}
-					$oklib = array();
 					$remlist = implode(',', $oklib);
 				}
+
 				// $remlist now only contains libraries that are OK to delete
 				//now actually delete the libraries
 				$now = time();
@@ -80,10 +81,10 @@ if ($myrights<20) {
 				}
 				
 				// delete the library items
-				$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:now WHERE id IN ($remlist)");
+				$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:now WHERE libid IN ($remlist)");
 				$stm->execute(array(':now'=>$now));
 
-				if (isset($qidstocheck)) {
+				if (count($qidstocheck)>0) {
 					$qids = array_map('Sanitize::onlyInt', $qidstocheck);//INTs from DB
           $qids_query_placeholders = Sanitize::generateQueryPlaceholders($qids);
 					//DB $query = "SELECT DISTINCT qsetid FROM `imas_library_items` WHERE qsetid IN ($qids)";
@@ -97,36 +98,40 @@ if ($myrights<20) {
 					//get a list of questions with no more library items
 					$qidstofix = array_diff($qidstocheck,$okqids);
             $qlist = array_map('Sanitize::onlyInt', $qidstofix);//INTs from DB
+			if (count($qidstofix)>0) {
             $qlist_query_placeholders = Sanitize::generateQueryPlaceholders($qlist);
 						//$query = "DELETE FROM imas_questionset WHERE id IN ($qlist)";
 						//DB $query = "UPDATE imas_questionset SET deleted=1 WHERE id IN ($qlist)";
 						//DB mysql_query($query) or die("Query failed : " . mysql_error());
 						$stm = $DBH->prepare("UPDATE imas_questionset SET deleted=1,lastmoddate=? WHERE id IN ($qlist_query_placeholders)");
             $stm->execute(array_merge(array($now),$qlist));
-						/*foreach ($qidstofix as $qid) {
-							delqimgs($qid);
-						}*/
-					}
-					
-					//see which questions with no active lib items already have an unassigned lib item we can undeleted 
-					$stm = $DBH->query("SELECT DISTINCT qsetid FROM `imas_library_items` WHERE qsetid IN ($qlist) AND libid=0 AND deleted=1");
-					$toundelqids = array();
-					while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-						$toundelqids[] = $row[0];
-					}
-					//undelete those lib items
-					$stm = $DBH->prepare("UPDATE `imas_library_items` SET deleted=0,lastmoddate=:now WHERE qsetid IN ($qlist) AND libid=0");
-					$stm->execute(array(':lastmoddate'=>$now));
+							echo "del: $qlist";
+							/*foreach ($qidstofix as $qid) {
+								delqimgs($qid);
+							}*/
+						} else {
+							//see which questions with no active lib items already have an unassigned lib item we can undeleted 
+							$stm = $DBH->query("SELECT DISTINCT qsetid FROM `imas_library_items` WHERE qsetid IN ($qlist) AND libid=0 AND deleted=1");
+							$toundelqids = array();
+							while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+								$toundelqids[] = $row[0];
+							}
+							//undelete those lib items
+							if (count($toundelqids)>0) {
+								$undellist = implode(',', $toundelqids);
+								$stm = $DBH->prepare("UPDATE `imas_library_items` SET deleted=0,lastmoddate=:now WHERE qsetid IN ($undellist) AND libid=0");
+								$stm->execute(array(':lastmoddate'=>$now));
+							}
 
-					//for questions with no active lib items or unassigned to undelete, add an unassigned lib item
-					$qidstoadd = array_diff($qidstofix, $toundelqids);
-					$stm = $DBH->prepare("INSERT INTO imas_library_items ( qsetid,libid,lastmoddate) VALUES (:qsetid, :libid, :lastmoddate)");
-					foreach($qidstoadd as $qid) {
-						$stm->execute(array(':qsetid'=>$qid, ':libid'=>0, ':lastmoddate'=>$now));
-					}
-				}
+							//for questions with no active lib items or unassigned to undelete, add an unassigned lib item
+							$qidstoadd = array_diff($qidstofix, $toundelqids);
+							$stm = $DBH->prepare("INSERT INTO imas_library_items ( qsetid,libid,lastmoddate) VALUES (:qsetid, :libid, :lastmoddate)");
+							foreach($qidstoadd as $qid) {
+								$stm->execute(array(':qsetid'=>$qid, ':libid'=>0, ':lastmoddate'=>$now));
+							}
+						}
 			header('Location: ' . $GLOBALS['basesiteurl'] . "/course/managelibs.php?cid=$cid");
-
+				
 			exit;
 		} else {
 			$pagetitle = "Confirm Removal";
@@ -624,8 +629,8 @@ if ($myrights<20) {
 		//DB $query .= "GROUP BY imas_libraries.id";
 		//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 		$query = "SELECT imas_libraries.id,imas_libraries.name,imas_libraries.ownerid,imas_libraries.userights,imas_libraries.sortorder,imas_libraries.parent,imas_libraries.groupid,count(imas_library_items.id) AS count ";
-		$query .= "FROM imas_libraries LEFT JOIN imas_library_items ON imas_library_items.libid=imas_libraries.id ";
-		$query .= "GROUP BY imas_libraries.id";
+		$query .= "FROM imas_libraries LEFT JOIN imas_library_items ON imas_library_items.libid=imas_libraries.id and imas_library_items.deleted=0 ";
+		$query .= "WHERE imas_libraries.deleted=0 GROUP BY imas_libraries.id";
 		$stm = $DBH->query($query);
 		$rights = array();
 		$sortorder = array();
