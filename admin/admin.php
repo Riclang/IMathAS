@@ -328,18 +328,15 @@ $placeinhead .= '</script>';
 	<div class=cp>
 	<span class=column>
 	<a href="../course/manageqset.php?cid=admin">Manage Question Set</a><BR>
-	<a href="../course/managelibs.php?cid=admin">Manage Libraries</a>
-	</span>
-	<span class=column>
+	<a href="../course/managelibs.php?cid=admin">Manage Libraries</a><br/>
 	<a href="exportlib.php?cid=admin">Export Libraries</a><BR>
-	<a href="importlib.php?cid=admin">Import Libraries</a>
 	</span>
 <?php
-		if ($myrights == 100) {
+	if ($myrights == 100) {
 ?>
 	<span class=column>
 	<a href="forms.php?action=listgroups">Edit Groups</a><br/>
-	<a href="forms.php?action=deloldusers">Delete Old Users</a><br/>
+	<a href="importlib.php?cid=admin">Import Libraries</a><br/>
 	<a href="importstu.php?cid=admin">Import Students from File</a>
 	</span>
 	<?php if ($allowmacroinstall) {
