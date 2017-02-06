@@ -252,8 +252,16 @@ if ($myrights<20) {
 
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which checked libraries it's not already in
-						$toadd = array_values(array_diff($newlibs,$alllibs[$qsetid]));
-						$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+						if (isset($alllibs[$qsetid])) {
+							$toadd = array_values(array_diff($newlibs,$alllibs[$qsetid]));
+						} else {
+							$toadd = $newlibs;
+						}
+						if (isset($dellibs[$qsetid])) {
+							$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+						} else {
+							$toundel = array();
+						}
 						$toaddnew = array_values(array_diff($toadd,$toundel));
 						
 						//and add them
@@ -285,8 +293,16 @@ if ($myrights<20) {
 					
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which checked libraries it's not already in
-						$toadd = array_diff($newlibs,$alllibs[$qsetid]);
-						$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+						if (isset($alllibs[$qsetid])) {
+							$toadd = array_values(array_diff($newlibs,$alllibs[$qsetid]));
+						} else {
+							$toadd = $newlibs;
+						}
+						if (isset($dellibs[$qsetid])) {
+							$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+						} else {
+							$toundel = array();
+						}
 						$toaddnew = array_values(array_diff($toadd,$toundel));
 						//print_r($toundel);
 						//print_r($toaddnew);
