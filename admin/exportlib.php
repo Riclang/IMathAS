@@ -83,7 +83,7 @@ if (!(isset($teacherid)) && $myrights<20) {
 		}
 		$query .= " ORDER BY uniqueid";
 		//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
-    $stm = $DBH->query($query);
+		$stm = $DBH->query($query);
 		//DB while ($row = mysql_fetch_row($result)) {
 		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 			if (!in_array($row[2],$rootlibs)) { //don't export children here
@@ -117,8 +117,8 @@ if (!(isset($teacherid)) && $myrights<20) {
 				//DB while ($row = mysql_fetch_row($result)) {
 			$query = "SELECT id,name,uniqueid,lastmoddate FROM imas_libraries WHERE parent=:parent AND deleted=0";
 			if ($nonpriv) {
-        $query .= " AND userights>0";
-      }
+				$query .= " AND userights>0";
+			}
 			$query .= " ORDER BY uniqueid";
 			$stm = $DBH->prepare($query);
 			$stm->execute(array(':parent'=>$lib));
@@ -166,7 +166,7 @@ if (!(isset($teacherid)) && $myrights<20) {
 			$query .= " AND imas_questionset.license>0";
 		}
 		//DB $result = mysql_query($query) or die("Query failed : $query" . mysql_error());
-    $stm = $DBH->query($query);
+		$stm = $DBH->query($query);
 		$qassoc = Array();
 		$libitems = Array();
 		$qcnt = 0;
@@ -197,7 +197,7 @@ if (!(isset($teacherid)) && $myrights<20) {
 		}
 		$query .= " AND (control LIKE '%includecodefrom%' OR qtext LIKE '%includeqtextfrom%')";
 		//DB $result = mysql_query($query) or die("Query failed : $query" . mysql_error());
-    $stm = $DBH->query($query);
+		$stm = $DBH->query($query);
 		$includedqs = array();
 		//DB while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 		while ($line = $stm->fetch(PDO::FETCH_ASSOC)) {
@@ -228,7 +228,7 @@ if (!(isset($teacherid)) && $myrights<20) {
 		}
 		$query .= " ORDER BY uniqueid";
 		//DB $result = mysql_query($query) or die("Query failed : $query" . mysql_error());
-    $stm = $DBH->query($query);
+		$stm = $DBH->query($query);
 		//DB while ($line = mysql_fetch_array($result, MYSQL_ASSOC)) {
 		while ($line = $stm->fetch(PDO::FETCH_ASSOC)) {
 			//DB $line['control'] = preg_replace('/includecodefrom\((\d+)\)/e','"includecodefrom(UID".$includedbackref["\\1"].")"',$line['control']);
@@ -277,15 +277,15 @@ if (!(isset($teacherid)) && $myrights<20) {
 				//DB $query = "SELECT var,filename FROM imas_qimages WHERE qsetid='{$line['id']}'";
 				//DB $r2 = mysql_query($query) or die("Query failed : " . mysql_error());
 				//DB while ($row = mysql_fetch_row($r2)) {
-				$stm2 = $DBH->prepare("SELECT var,filename FROM imas_qimages WHERE qsetid=:qsetid");
+				$stm2 = $DBH->prepare("SELECT var,filename,alttext FROM imas_qimages WHERE qsetid=:qsetid");
 				$stm2->execute(array(':qsetid'=>$line['id']));
 				while ($row = $stm2->fetch(PDO::FETCH_NUM)) {
 					$row[1] = trim($row[1]);
-					echo $row[0].','.$row[1]. "\n";
 					if ($GLOBALS['filehandertypecfiles'] == 's3') {
 						copyqimage($row[1],realpath("../assessment/qimages").DIRECTORY_SEPARATOR.$row[1]);
 					}
 					$imgfiles[] = realpath("../assessment/qimages").DIRECTORY_SEPARATOR.$row[1];
+					echo $row[0].','.$row[1].','.$row[2]. "\n";
 				}
 			}
 		}
