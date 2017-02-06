@@ -174,15 +174,15 @@ if ($myrights<20) {
 					$newlibs = array();
 				} else {
 					$newlibs = array_map('intval', $newlibs);
-					if ($newlibs[0]==0 && count($newlibs)>1) { //get rid of unassigned if checked and others are checked
+					if ($newlibs[0]==0) { //get rid of unassigned if checked
 						array_shift($newlibs);
 					}
 				}
 				//Verify we have rights to add to all of newlibs
 				$newliblist = implode(',', $newlibs);
-				if (!$isadmin) {
+				if (!$isadmin && count($newlibs)>0) {
 					$oktoaddto = array();
-					$stm = $DBH->prepare("SELECT id,ownerid,userights,groupid FROM imas_libraries WHERE id IN ($newliblist)");
+					$stm = $DBH->query("SELECT id,ownerid,userights,groupid FROM imas_libraries WHERE id IN ($newliblist)");
 					while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 						if ($isgrpadmin) {
 							if ($row['groupid']==$groupid || $row['userights']==8) {
@@ -206,9 +206,14 @@ if ($myrights<20) {
 
 				//pull a list of all non-deleted library items for these questions
 				$alllibs = array();
-				$stm = $DBH->query("SELECT qsetid,libid FROM imas_library_items WHERE qsetid IN ($chglist) AND deleted=0");
+				$dellibs = array();
+				$stm = $DBH->query("SELECT qsetid,libid,deleted FROM imas_library_items WHERE qsetid IN ($chglist)");
 				while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-					$alllibs[$row[0]][] = $row[1];
+					if ($row[2]==0) {
+						$alllibs[$row[0]][] = $row[1];
+					} else {
+						$dellibs[$row[0]][] = $row[1];
+					}
 				}
 				
 				//pull a list of non-deleted library items for these questions that user has the rights to modify
@@ -242,13 +247,21 @@ if ($myrights<20) {
 					add to new libraries
 					*/
 					$ins_stm = $DBH->prepare("INSERT INTO imas_library_items (libid,qsetid,ownerid,lastmoddate) VALUES (:libid, :qsetid, :ownerid, :now)");
+					$undel_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now,ownerid=:ownerid WHERE qsetid=:qsetid AND libid=:libid");
 					$del_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:now WHERE qsetid=:qsetid AND libid=0");
 
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which checked libraries it's not already in
 						$toadd = array_values(array_diff($newlibs,$alllibs[$qsetid]));
+						$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+						$toaddnew = array_values(array_diff($toadd,$toundel));
+						
 						//and add them
-						foreach($toadd as $libid) {
+						foreach ($toundel as $libid) {
+							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
+							$undel_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
+						}
+						foreach($toaddnew as $libid) {
 							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
 							$ins_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 						}
@@ -265,6 +278,7 @@ if ($myrights<20) {
 					add to any new
 					*/
 					$ins_stm = $DBH->prepare("INSERT INTO imas_library_items (libid,qsetid,ownerid,lastmoddate) VALUES (:libid, :qsetid, :ownerid, :now)");
+					$undel_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now,ownerid=:ownerid WHERE qsetid=:qsetid AND libid=:libid");
 					$del_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:now WHERE libid=:libid AND qsetid=:qsetid");
 					$sel_stm = $DBH->prepare("SELECT id,deleted FROM imas_library_items WHERE qsetid=:qsetid AND (deleted=0 OR (libid=0 AND deleted=1)) ORDER BY deleted");
 					$unassn_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now WHERE libid=0 AND qsetid=:qsetid");
@@ -272,8 +286,19 @@ if ($myrights<20) {
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which checked libraries it's not already in
 						$toadd = array_diff($newlibs,$alllibs[$qsetid]);
+						$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+						$toaddnew = array_values(array_diff($toadd,$toundel));
+						//print_r($toundel);
+						//print_r($toaddnew);
+						//exit;
+						
 						//and add them
-						foreach($toadd as $libid) {
+						foreach ($toundel as $libid) {
+							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
+							$undel_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
+						}
+						foreach($toaddnew as $libid) {
+							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
 							$ins_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 						}
 						//determine which libraries to remove from; my lib assignments - newlibs
@@ -311,8 +336,6 @@ if ($myrights<20) {
 						if (isset($mylibs[$qsetid])) {
 							$toremove = array_diff($mylibs[$qsetid],$newlibs);
 							foreach($toremove as $libid) {
-								//DB $query = "DELETE FROM imas_library_items WHERE libid='$libid' AND qsetid='$qsetid'";
-								//DB mysql_query($query) or die("Query failed :$query " . mysql_error());
 								$del_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':now'=>$now));
 							}
 							//check for unassigneds
