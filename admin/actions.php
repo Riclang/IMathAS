@@ -625,13 +625,17 @@ switch($_POST['action']) {
 				$stm = $DBH->prepare("SELECT filename FROM imas_instr_files WHERE itemid=:itemid");
 				$stm->execute(array(':itemid'=>$ilid[0]));
 				while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-					$stm2 = $DBH->prepare("SELECT id FROM imas_instr_files WHERE filename=:filename");
-					$stm2->execute(array(':filename'=>$row[0]));
-					if ($stm2->rowCount()==1) {
-						//unlink($uploaddir . $row[0]);
-						deletecoursefile($row[0]);
+					if (substr($row[0],0,4)!='http') {
+						$stm2 = $DBH->prepare("SELECT id FROM imas_instr_files WHERE filename=:filename");
+						$stm2->execute(array(':filename'=>$row[0]));
+						if ($stm2->rowCount()==1) {
+							//unlink($uploaddir . $row[0]);
+							deletecoursefile($row[0]);
+						}
 					}
 				}
+				//DB $query = "DELETE FROM imas_instr_files WHERE itemid='{$ilid[0]}'";
+				//DB mysql_query($query) or die("Query failed : " . mysql_error());
 				$stm = $DBH->prepare("DELETE FROM imas_instr_files WHERE itemid=:itemid");
 				$stm->execute(array(':itemid'=>$ilid[0]));
 			}

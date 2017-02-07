@@ -260,14 +260,16 @@
 			$imgcnt = $stm->rowCount();
 			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 				if (isset($_POST['delimg-'.$row[0]])) {
-					//DB $query = "SELECT id FROM imas_qimages WHERE filename='{$row[1]}'";
-					//DB $r2 = mysql_query($query) or die("Query failed :$query " . mysql_error());
-					//DB if (mysql_num_rows($r2)==1) {
-					$stm2 = $DBH->prepare("SELECT id FROM imas_qimages WHERE filename=:filename");
-					$stm2->execute(array(':filename'=>$row[1]));
-					if ($stm2->rowCount()==1) {
-						//unlink(rtrim(dirname(__FILE__), '/\\') .'/../assessment/qimages/'.$row[1]);
-						deleteqimage($row[1]);
+					if (substr($row[1],0,4)!='http') {
+						//DB $query = "SELECT id FROM imas_qimages WHERE filename='{$row[1]}'";
+						//DB $r2 = mysql_query($query) or die("Query failed :$query " . mysql_error());
+						//DB if (mysql_num_rows($r2)==1) {
+						$stm2 = $DBH->prepare("SELECT id FROM imas_qimages WHERE filename=:filename");
+						$stm2->execute(array(':filename'=>$row[1]));
+						if ($stm2->rowCount()==1) {
+							//unlink(rtrim(dirname(__FILE__), '/\\') .'/../assessment/qimages/'.$row[1]);
+							deleteqimage($row[1]);
+						}
 					}
 					//DB $query = "DELETE FROM imas_qimages WHERE id='{$row[0]}'";
 					//DB mysql_query($query) or die("Query failed :$query " . mysql_error());
@@ -1235,7 +1237,9 @@ Image file: <input type="file" name="imgfile"/> assign to variable: <input type=
 <?php
 if (isset($images['vars']) && count($images['vars'])>0) {
 	foreach ($images['vars'] as $id=>$var) {
-		if(isset($GLOBALS['CFG']['GEN']['AWSforcoursefiles']) && $GLOBALS['CFG']['GEN']['AWSforcoursefiles'] == true) {
+		if (substr($images['files'][$id],0,4)=='http') {
+			$urlimg = $images['files'][$id];
+		} else if (isset($GLOBALS['CFG']['GEN']['AWSforcoursefiles']) && $GLOBALS['CFG']['GEN']['AWSforcoursefiles'] == true) {
 			$urlimg = $urlmode."{$GLOBALS['AWSbucket']}.s3.amazonaws.com/qimages/{$images['files'][$id]}";
 		} else {
 			$urlimg = "$imasroot/assessment/qimages/{$images['files'][$id]}";
