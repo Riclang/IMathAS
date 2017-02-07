@@ -95,6 +95,7 @@ function additem($itemtoadd,$item,$questions,$qset) {
 			$stm = $DBH->prepare("SELECT id,adddate,lastmoddate,deleted FROM imas_questionset WHERE uniqueid=:uniqueid");
 			$stm->execute(array(':uniqueid'=>$questions[$qid]['uqid']));
 			$questionexists = ($stm->rowCount()>0);
+			echo "Question ID ".$questions[$qid]['uqid'].($questionexists?" exists":" not found");
 			if ($questionexists) {
 				list($thisqsetid, $qadddate, $qlastmoddate, $qdeleted) = $stm->fetch(PDO::FETCH_NUM);
 			}
@@ -149,7 +150,7 @@ function additem($itemtoadd,$item,$questions,$qset) {
 							} else {
 								$alttext = $p[2];
 							}
-						
+							$p[1] = filter_var($p[1], FILTER_SANITIZE_URL);
 							$stm = $DBH->prepare("INSERT INTO imas_qimages (qsetid,var,filename,alttext) VALUES (:qsetid, :var, :filename, :alt)");
 							$stm->execute(array(':qsetid'=>$qsetid, ':var'=>$p[0], ':filename'=>$p[1], ':alt'=>$alttext));
 						}
@@ -334,11 +335,15 @@ function additem($itemtoadd,$item,$questions,$qset) {
 			$item[$itemtoadd]['instrfiles'] = explode("\n",$item[$itemtoadd]['instrfiles']);
 			$fileorder = array();
 			foreach ($item[$itemtoadd]['instrfiles'] as $fileinfo) {
-				if (!file_exists("../course/files/$filename")) {
-					$missingfiles[] = $filename;
-				}
+				
 				//DB list($filename,$filedescr) = explode(':::',addslashes($fileinfo));
 				list($filename,$filedescr) = explode(':::',$fileinfo);
+				if (substr($filename,0,4)=='http') {
+					$filename = filter_var($filename, FILTER_SANITIZE_URL);
+				} else if (!file_exists("../course/files/$filename")) {
+					$missingfiles[] = $filename;
+				}
+				
 				//DB $query = "INSERT INTO imas_instr_files (description,filename,itemid) VALUES ";
 				//DB $query .= "('$filedescr','$filename',$typeid)";
 				//DB mysql_query($query) or die("error on: $query: " . mysql_error());

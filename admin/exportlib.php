@@ -280,24 +280,11 @@ if (!(isset($teacherid)) && $myrights<20) {
 				$stm2 = $DBH->prepare("SELECT var,filename,alttext FROM imas_qimages WHERE qsetid=:qsetid");
 				$stm2->execute(array(':qsetid'=>$line['id']));
 				while ($row = $stm2->fetch(PDO::FETCH_NUM)) {
-					$row[1] = trim($row[1]);
-					if ($GLOBALS['filehandertypecfiles'] == 's3') {
-						copyqimage($row[1],realpath("../assessment/qimages").DIRECTORY_SEPARATOR.$row[1]);
-					}
-					$imgfiles[] = realpath("../assessment/qimages").DIRECTORY_SEPARATOR.$row[1];
-					echo $row[0].','.$row[1].','.$row[2]. "\n";
+					echo $row[0].','.getqimageurl($row[1],true).','.$row[2]. "\n";
 				}
 			}
 		}
-		// need to work on
-		include("../includes/tar.class.php");
-		if (file_exists("../course/files/qimages.tar.gz")) {
-			unlink("../course/files/qimages.tar.gz");
-		}
-		$tar = new tar();
-		$tar->addFiles($imgfiles);
-		$tar->toTar("../course/files/qimages.tar.gz",TRUE);
-
+		
 		exit;
 	} else {  //STEP 1 DATA MANIPULATION
 
@@ -343,7 +330,7 @@ if ($overwriteBody==1) {
 		</span><br class=form>
 
 		<input type=submit name="submit" value="Export"><br/>
-		Once exported, <a href="../course/files/qimages.tar.gz">download image files</a> to be put in assessment/qimages
+
 	</form>
 
 

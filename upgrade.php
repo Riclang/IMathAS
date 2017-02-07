@@ -27,10 +27,10 @@ if (isset($dbsetup) && $dbsetup==true) {  //initial setup run from dbsetup.php
 	$c = file_get_contents("config.php");
 	if (strpos($c, '$DBH')===false) {
 		echo '<p>The database connection mechanism has been updated to PDO. You will
-			need to revise your config.php before continuing to use the system.
-			In your existing config.php, remove everything below the line
-			<code>//no need to change anything from here on</code> and replace it
-			with the following code</p>
+					need to revise your config.php before continuing to use the system.
+					In your existing config.php, remove everything below the line
+					<code>//no need to change anything from here on</code> and replace it
+					with the following code</p>
 <pre>
 /* Connecting, selecting database */
 // MySQL with PDO_MYSQL
@@ -47,9 +47,9 @@ unset($dbserver);
 unset($dbusername);
 unset($dbpassword);
 </pre>
-			<p>On a production server, you may wish to set the PDO::ATTR_ERRMODE to PDO::ERRMODE_SILENT to hide database errors from users.</p>
-			<p>Run upgrade.php again after making those changes</p>';
-			exit;
+					<p>On a production server, you may wish to set the PDO::ATTR_ERRMODE to PDO::ERRMODE_SILENT to hide database errors from users.</p>
+					<p>Run upgrade.php again after making those changes</p>';
+					exit;
 	}
 	$use_local_sessions = true;
 	if (php_sapi_name() == 'cli') { //allow direct calling from command line
@@ -1917,32 +1917,32 @@ span.instronly {
 		if ($last<117) {
 			//rewrite way imas_courses.available works
 			$query = "ALTER TABLE `imas_teachers` ADD `hidefromcourselist` TINYINT(1) NOT NULL DEFAULT '0';";
-			$res = $DBH->query($query);
-			if ($res===false) {
-				echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
-			}
-			$query = "ALTER TABLE `imas_tutors` ADD `hidefromcourselist` TINYINT(1) NOT NULL DEFAULT '0';";
-			$res = $DBH->query($query);
-			if ($res===false) {
-				echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
-			}
-		}
-		if ($last<118) {
-			$query = "UPDATE imas_teachers SET hidefromcourselist=1 WHERE courseid IN ";
-			$query .= "(SELECT id FROM imas_courses WHERE available>1)";
-			$res = $DBH->query($query);
-			
-			$query = "UPDATE imas_courses SET available=available-2 WHERE available>1 AND available<4";
-			$res = $DBH->query($query);	
-		}
-		if ($last<119) {
-			$query = "ALTER TABLE  `imas_questions` ADD `fixedseeds` TEXT NULL DEFAULT NULL;";
-			$res = $DBH->query($query);
+			 $res = $DBH->query($query);
 			 if ($res===false) {
 			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
 			 }
-		}
-	
+			$query = "ALTER TABLE `imas_tutors` ADD `hidefromcourselist` TINYINT(1) NOT NULL DEFAULT '0';";
+			 $res = $DBH->query($query);
+			 if ($res===false) {
+			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
+			 }
+			 }
+		if ($last<118) {
+			$query = "UPDATE imas_teachers SET hidefromcourselist=1 WHERE courseid IN ";
+			$query .= "(SELECT id FROM imas_courses WHERE available>1)";
+			 $res = $DBH->query($query);
+			 
+			$query = "UPDATE imas_courses SET available=available-2 WHERE available>1 AND available<4";
+			 $res = $DBH->query($query);
+			 }
+		if ($last<119) {
+			$query = "ALTER TABLE  `imas_questions` ADD `fixedseeds` TEXT NULL DEFAULT NULL;";
+			 $res = $DBH->query($query);
+			 if ($res===false) {
+				echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
+			 }
+			 }
+			 
 /***
   end older DB update stuff
 ***/
@@ -1951,12 +1951,24 @@ span.instronly {
 		//let Migrator handle updating the ver
 		$stm = $DBH->prepare("UPDATE imas_dbschema SET ver=:ver WHERE id=1");
 		$stm->execute(array(':ver'=>$latest_oldstyle));
-	}
+			 }
 		
 	$migrator = new Migrator($DBH, (isset($dbsetup) && $dbsetup==true));
 	$migrator->migrateAll();
 
 	echo "Migrations complete";
-	
-
+		if ($last<121) {
+			$query = "ALTER TABLE  `imas_qimages` CHANGE  `filename`  `filename` VARCHAR(254) NOT NULL DEFAULT '';";
+			$res = $DBH->query($query);
+			 if ($res===false) {
+			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
+			 }
+			$query = "ALTER TABLE  `imas_instr_files` CHANGE  `filename`  `filename` VARCHAR(254) NOT NULL DEFAULT '';";
+			$res = $DBH->query($query);
+			 if ($res===false) {
+			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
+			 }
+		}		
+		
+		
 ?>

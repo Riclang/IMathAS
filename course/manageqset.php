@@ -1361,8 +1361,8 @@ function delqimgs($qsid) {
 	//DB $query = "SELECT id,filename,var FROM imas_qimages WHERE qsetid='$qsid'";
 	//DB $result = mysql_query($query) or die("Query failed :$query " . mysql_error());
 	//DB while ($row = mysql_fetch_row($result)) {
-  $del_stm = $DBH->prepare("DELETE FROM imas_qimages WHERE id=:id");
-  $stm2 = $DBH->prepare("SELECT id FROM imas_qimages WHERE filename=:filename");
+	$del_stm = $DBH->prepare("DELETE FROM imas_qimages WHERE id=:id");
+	$stm2 = $DBH->prepare("SELECT id FROM imas_qimages WHERE filename=:filename");
 
 	$stm = $DBH->prepare("SELECT id,filename,var FROM imas_qimages WHERE qsetid=:qsetid");
 	$stm->execute(array(':qsetid'=>$qsid));
@@ -1370,9 +1370,11 @@ function delqimgs($qsid) {
 		//DB $query = "SELECT id FROM imas_qimages WHERE filename='{$row[1]}'";
 		//DB $r2 = mysql_query($query) or die("Query failed :$query " . mysql_error());
 		//DB if (mysql_num_rows($r2)==1) {
-		$stm2->execute(array(':filename'=>$row[1]));
-		if ($stm2->rowCount()==1) {
-			unlink(rtrim(dirname(__FILE__), '/\\') .'/../assessment/qimages/'.$row[1]);
+		if (substr($row[1],0,4)!='http') {
+			$stm2->execute(array(':filename'=>$row[1]));
+			if ($stm2->rowCount()==1) {
+				unlink(rtrim(dirname(__FILE__), '/\\') .'/../assessment/qimages/'.$row[1]);
+			}
 		}
 		//DB $query = "DELETE FROM imas_qimages WHERE id='{$row[0]}'";
 		//DB mysql_query($query) or die("Query failed :$query " . mysql_error());

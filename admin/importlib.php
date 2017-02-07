@@ -84,7 +84,9 @@ function parseqs($file,$touse,$rights) {
 								$alttext = implode(',', array_slice($p, 2));
 							} else {
 								$alttext = $p[2];
-							}
+							}                               
+							//strip out any HTML-like stuff from 
+							$p[1] = filter_var($p[1], FILTER_SANITIZE_URL);
 							//DB $query = "INSERT INTO imas_qimages (qsetid,var,filename) VALUES ($qsetid,'{$p[0]}','{$p[1]}')";
 							//DB mysql_query($query) or die("Import failed on $query: " . mysql_error());
 							$stm = $DBH->prepare("INSERT INTO imas_qimages (qsetid,var,filename,alttext) VALUES (:qsetid, :var, :filename, :alt)");
