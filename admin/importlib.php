@@ -47,7 +47,7 @@ function parseqs($file,$touse,$rights) {
 		}
 
 		if ($exists && ($deleted==1 || $_POST['merge']==1 || $_POST['merge']==2)) {
-			if (($qd['lastmod']>$adddate && $lastmoddate==$adddate) || $deleted==1 || $_POST['merge']==2) { //only update if changed unless forced
+			if (($qd['lastmod']>$adddate && $lastmoddate<=$adddate) || $deleted==1 || $_POST['merge']==2) { //only update if changed unless forced
 				if (!empty($qd['qimgs'])) {
 					$hasimg = 1;
 				} else {

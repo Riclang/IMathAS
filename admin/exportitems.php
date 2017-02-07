@@ -473,10 +473,10 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 				//DB $query = "SELECT var,filename FROM imas_qimages WHERE qsetid='{$line['id']}'";
 				//DB $r2 = mysql_query($query) or die("Query failed : " . mysql_error());
 				//DB while ($row = mysql_fetch_row($r2)) {
-				$stm2 = $DBH->prepare("SELECT var,filename FROM imas_qimages WHERE qsetid=:qsetid");
+				$stm2 = $DBH->prepare("SELECT var,filename,alttext FROM imas_qimages WHERE qsetid=:qsetid");
 				$stm2->execute(array(':qsetid'=>$line['id']));
 				while ($row = $stm2->fetch(PDO::FETCH_NUM)) {
-					echo Sanitize::encodeStringForDisplay($row[0]).','.Sanitize::encodeStringForDisplay($row[1]). "\n";
+					echo Sanitize::encodeStringForDisplay($row[0]).','.Sanitize::encodeStringForDisplay($row[1]).','.Sanitize::encodeStringForDisplay($row[2]). "\n";
 
 				}
 			}
