@@ -783,12 +783,15 @@ switch($_GET['action']) {
 		echo '<div id="headerforms" class="pagetitle">';
 		echo "<h3>View Federation Peers</h3>\n";
 		echo '</div>';
-		echo "<table><tr><th>Name</th><th>Description</th><th>Last Pull</th><th>Modify</th><th>Delete</th></tr>\n";
+		echo "<table><tr><th>Name</th><th>Description</th><th>Their Last Pull</th><th>Our Last Pull</th><th>Modify</th><th>Delete</th></tr>\n";
 
-		$stm = $DBH->query("SELECT id,peername,peerdescription,lastpull FROM imas_federation_peers");
+		$query = "SELECT ifp.id,ifp.peername,ifp.peerdescription,ifp.lastpull,max(pulls.pulltime) as uspull FROM imas_federation_peers AS ifp ";
+		$query .= "LEFT JOIN imas_federation_pulls AS pulls ON ifp.id=pulls.peerid GROUP BY pulls.peerid";
+		$stm = $DBH->query($query);
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			echo "<tr><td>{$row['peername']}</td><td>{$row['peerdescription']}</td>";
 			echo '<td>'.($row['lastpull']>0?tzdate("n/j/y", $row['lastpull']):'Never').'</td>';
+			echo '<td>'.($row['uspull']===null?'Never':tzdate("n/j/y", $row['uspull'])).'</td>';
 			echo "<td><a href=\"forms.php?action=modfedpeers&id={$row['id']}\">Modify</a></td>\n";
 			echo "<td><a href=\"actions.php?action=delfedpeers&id={$row['id']}\" onclick=\"return confirm('Are you sure?');\">Delete</a></td>\n";
 			echo "</tr>\n";
