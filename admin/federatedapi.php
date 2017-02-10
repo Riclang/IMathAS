@@ -39,6 +39,11 @@ if ($stage == 0) { //send updated libraries
 			'd'=>$row['deleted'], 'lm'=>$row['lastmoddate'], 'p'=>$row['parent']==0?0:$row['parentuid']);	
 	}
 	echo json_encode(array('since'=>$since, 'stage'=>0, 'data'=>$libs));
+	
+	//record this pull
+	$now = time();
+	$stm = $DBH->prepare('UPDATE imas_federation_peers SET lastpull=:now WHERE peername=:peername')
+	$stm->execute(array(':now'=>$now, ':peername'=>$_GET['peer']));
 	exit;	
 } else if ($stage == 1) { //send updated questions
 	//we're going to order from most recent back so that if something updates while we're

@@ -719,6 +719,14 @@ function getuserfileurl($key) {
 		return "$imasroot/filestore/$key";
 	}
 }
+function getfopenloc($key) {
+	global $urlmode,$imasroot;
+	if ($GLOBALS['filehandertype'] == 's3') {
+		return $urlmode."s3.amazonaws.com/{$GLOBALS['AWSbucket']}/$key";
+	} else {
+		return "../filestore/$key";
+	}
+}
 function getcoursefileurl($key,$abs=false) {
 	global $urlmode,$imasroot;
 	$st = substr($key,0,6);
