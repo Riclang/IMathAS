@@ -1444,7 +1444,11 @@ function gbinstrdisp() {
 		//total totals
 		if ($catfilter<0) {
 			if (isset($gbt[0][3][0])) { //using points based
-				echo '<th><div><span class="cattothdr">', _('Total'), '<br/>'.$gbt[0][3][$availshow].'&nbsp;', _('pts'), '</span></div></th>';
+				if ($availshow<3) {
+					echo '<th><div><span class="cattothdr">', _('Total'), '<br/>'.$gbt[0][3][$availshow].'&nbsp;', _('pts'), '</span></div></th>';
+				} else {
+					echo '<th><div><span class="cattothdr">', _('Total'), '</span></div></th>';
+				}
 				echo '<th><div>%</div></th>';
 				$n+=2;
 			} else {
@@ -1579,7 +1583,11 @@ function gbinstrdisp() {
 		//total totals
 		if ($catfilter<0) {
 			if (isset($gbt[0][3][0])) { //using points based
-				echo '<th><div><span class="cattothdr">', _('Total'), '<br/>'.$gbt[0][3][$availshow].'&nbsp;', _('pts'), '</span></div></th>';
+				if ($availshow<3) {
+					echo '<th><div><span class="cattothdr">', _('Total'), '<br/>'.$gbt[0][3][$availshow].'&nbsp;', _('pts'), '</span></div></th>';
+				} else {
+					echo '<th><div><span class="cattothdr">', _('Total'), '</span></div></th>';
+				}
 				echo '<th><div>%</div></th>';
 				$n+=2;
 			} else {
@@ -1631,12 +1639,13 @@ function gbinstrdisp() {
 		if ($totonleft && !$hidepast) {
 			//total totals
 			if ($catfilter<0) {
+				$fivenum = "<span onmouseover=\"tipshow(this,'". _('5-number summary:'). " {$gbt[0][3][3+$availshow]}')\" onmouseout=\"tipout()\" >";
 				if ($availshow==3) {
 					if ($gbt[$i][0][0]=='Averages') {
 						if (isset($gbt[$i][3][8])) { //using points based
 							echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'%'.$enddiv .'</td>';
 						}
-						echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'%'.$enddiv .'</td>';
+						echo '<td class="c">'.$insdiv.$fivenum.$gbt[$i][3][6].'%</span>'.$enddiv .'</td>';
 					} else {
 						if (isset($gbt[$i][3][8])) { //using points based
 							echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'/'.$gbt[$i][3][7].$enddiv.'</td>';
@@ -1649,9 +1658,17 @@ function gbinstrdisp() {
 				} else {
 					if (isset($gbt[0][3][0])) { //using points based
 						echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow].$enddiv .'</td>';
-						echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow+3] .'%'.$enddiv .'</td>';
+						if ($gbt[$i][0][0]=='Averages') {
+							echo '<td class="c">'.$insdiv.$fivenum.$gbt[$i][3][$availshow+3] .'%</span>'.$enddiv .'</td>';
+						} else {
+							echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow+3] .'%'.$enddiv .'</td>';
+						}
 					} else {
-						echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow].'%'.$enddiv .'</td>';
+						if ($gbt[$i][0][0]=='Averages') {
+							echo '<td class="c">'.$insdiv.$fivenum.$gbt[$i][3][$availshow].'%</span>'.$enddiv .'</td>';
+						} else {
+							echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow].'%'.$enddiv .'</td>';
+						}
 					}
 				}
 			}
@@ -1666,19 +1683,19 @@ function gbinstrdisp() {
 					if ($catfilter!=-1 && $availshow<3 && $gbt[0][2][$j][$availshow+3]>0) {
 						//echo '<td class="c">'.$gbt[$i][2][$j][$availshow].' ('.round(100*$gbt[$i][2][$j][$availshow]/$gbt[0][2][$j][$availshow+3])  .'%)</td>';
 						echo '<td class="c">'.$insdiv;
-						if ($gbt[$i][0][0]=='Averages' && $availshow!=3) {
+						if ($gbt[$i][0][0]=='Averages' && $availshow!=3 && $gbt[0][2][$j][6+$availshow]!='') {
 							echo "<span onmouseover=\"tipshow(this,'", _('5-number summary:'), " {$gbt[0][2][$j][6+$availshow]}')\" onmouseout=\"tipout()\" >";
 						}
 						echo $gbt[$i][2][$j][$availshow].' ('.round(100*$gbt[$i][2][$j][$availshow]/$gbt[0][2][$j][$availshow+3])  .'%)';
 
-						if ($gbt[$i][0][0]=='Averages' && $availshow!=3) {
+						if ($gbt[$i][0][0]=='Averages' && $availshow!=3 && $gbt[0][2][$j][6+$availshow]!='') {
 							echo '</span>';
 						}
 						echo $enddiv .'</td>';
 					} else {
 						//echo '<td class="c">'.$gbt[$i][2][$j][$availshow].'</td>';
 						echo '<td class="c">'.$insdiv;
-						if ($gbt[$i][0][0]=='Averages') {
+						if ($gbt[$i][0][0]=='Averages' && $gbt[0][2][$j][6+$availshow]!='') {
 							echo "<span onmouseover=\"tipshow(this,'", _('5-number summary:'), " {$gbt[0][2][$j][6+$availshow]}')\" onmouseout=\"tipout()\" >";
 						}
 						if ($availshow==3) {
@@ -1698,7 +1715,7 @@ function gbinstrdisp() {
 								}
 							}
 						}
-						if ($gbt[$i][0][0]=='Averages') {
+						if ($gbt[$i][0][0]=='Averages' && $gbt[0][2][$j][6+$availshow]!='') {
 							echo '</span>';
 						}
 						echo $enddiv .'</td>';
@@ -1932,15 +1949,16 @@ function gbinstrdisp() {
 
 			//total totals
 			if ($catfilter<0) {
+				$fivenum = "<span onmouseover=\"tipshow(this,'". _('5-number summary:'). " {$gbt[0][3][3+$availshow]}')\" onmouseout=\"tipout()\" >";
 				if ($availshow==3) {
 					if ($gbt[$i][0][0]=='Averages') {
 						if (isset($gbt[$i][3][8])) { //using points based
 							echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'%'.$enddiv .'</td>';
 						}
-						echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'%'.$enddiv .'</td>';
+						echo '<td class="c">'.$insdiv.$fivenum.$gbt[$i][3][6].'%</span>'.$enddiv .'</td>';
 					} else {
 						if (isset($gbt[$i][3][8])) { //using points based
-							echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'/'.$gbt[$i][3][7].$enddiv .'</td>';
+							echo '<td class="c">'.$insdiv.$gbt[$i][3][6].'/'.$gbt[$i][3][7].$enddiv.'</td>';
 							echo '<td class="c">'.$insdiv.$gbt[$i][3][8] .'%'.$enddiv .'</td>';
 
 						} else {
@@ -1950,9 +1968,17 @@ function gbinstrdisp() {
 				} else {
 					if (isset($gbt[0][3][0])) { //using points based
 						echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow].$enddiv .'</td>';
-						echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow+3] .'%'.$enddiv .'</td>';
+						if ($gbt[$i][0][0]=='Averages') {
+							echo '<td class="c">'.$insdiv.$fivenum.$gbt[$i][3][$availshow+3] .'%</span>'.$enddiv .'</td>';
+						} else {
+							echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow+3] .'%'.$enddiv .'</td>';
+						}
 					} else {
-						echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow].'%'.$enddiv .'</td>';
+						if ($gbt[$i][0][0]=='Averages') {
+							echo '<td class="c">'.$insdiv.$fivenum.$gbt[$i][3][$availshow].'%</span>'.$enddiv .'</td>';
+						} else {
+							echo '<td class="c">'.$insdiv.$gbt[$i][3][$availshow].'%'.$enddiv .'</td>';
+						}
 					}
 				}
 			}

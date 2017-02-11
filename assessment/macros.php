@@ -2233,27 +2233,20 @@ function formpopup($label,$content,$width=600,$height=400,$type='link',$scroll='
 }
 
 function forminlinebutton($label,$content,$style='button',$outstyle='block') {
-	if (isset($GLOBALS['inlinebuttoncnt'])) {
-		$r = $GLOBALS['inlinebuttoncnt'];
-		$GLOBALS['inlinebuttoncnt']++;
-		//$out = '';
-	} else {
-		$r = 1;
-		$GLOBALS['inlinebuttoncnt'] = 2;
-		//$out = '<script type="text/javascript">function toggleinlinebtn(n){var el=document.getElementById(n);el.style.display=="none"?el.style.display="":el.style.display="none";}</script>';
-	}
+	$r = uniqid();
 	$label = str_replace('"','',$label);
+	$common = 'id="inlinebtn'.$r.'" aria-controls="inlinebtnc'.$r.'" aria-expanded="false" value="'.$label.'" onClick="toggleinlinebtn(\''.$r.'\');"';
 	if ($style=='classic') {
-		$out = '<input type="button" value="'.$label.'" onClick="toggleinlinebtn(\'inlinebtn'.$r.'\');" />';
+		$out = '<input type="button" '.$common.'/>';
 	} else if ($style=='link') {
-		$out = '<span class="link" onClick="toggleinlinebtn(\'inlinebtn'.$r.'\');">'.$label.'</span>';
+		$out = '<span class="link" '.$common.'>'.$label.'</span>';
 	} else {
-		$out = '<span class="spanbutton" onClick="toggleinlinebtn(\'inlinebtn'.$r.'\');">'.$label.'</span>';
+		$out = '<span class="spanbutton" '.$common.'>'.$label.'</span>';
 	}
 	if ($outstyle=='inline') {
-		$out .= ' <span id="inlinebtn'.$r.'" style="display:none;">'.$content.'</span>';
+		$out .= ' <span id="inlinebtnc'.$r.'" style="display:none;">'.$content.'</span>';
 	} else {
-		$out .= '<div id="inlinebtn'.$r.'" style="display:none;">'.$content.'</div>';
+		$out .= '<div id="inlinebtnc'.$r.'" style="display:none;">'.$content.'</div>';
 	}
 	return $out;
 }
@@ -2711,6 +2704,7 @@ function comparefunctions($a,$b,$vars='x',$tol='.001',$domain='-10,10') {
 	$cntnanb = 0;
 	$correct = true;
 	$ratios = array();
+	$evalerr = false;
 	for ($i = 0; $i < 20; $i++) {
 		for($j=0; $j < count($variables); $j++) {
 			$tp[$j] = $tps[$i][$j];
@@ -2718,6 +2712,7 @@ function comparefunctions($a,$b,$vars='x',$tol='.001',$domain='-10,10') {
 		$ansa = @eval("return ($a);");
 		$ansb = @eval("return ($b);");
 		if ($ansa===false || $ansb===false) {
+			$evalerr = true;
 			break;
 		}
 		//echo "real: $ansa, my: $ansb <br/>";
@@ -2748,13 +2743,16 @@ function comparefunctions($a,$b,$vars='x',$tol='.001',$domain='-10,10') {
 			echo "<p>Funcs: $a and $b</p>";
 		}
 		return false;
-	} else if ($i<20) {
+	} else if ($evalerr) {
 		if (isset($GLOBALS['teacherid'])) {
 			echo "<p>Debug info: one function was invalid.</p>";
 			echo "<p>Funcs: $a and $b</p>";
 		}
 		return false;
+	} else if ($i<20) { //broke out early
+		return false;
 	}
+	
 	if (abs($cntnana - $cntnanb)>1) {
 		return false;
 	}
@@ -2909,9 +2907,9 @@ function getfeedbacktxtnumber($stu, $partial, $fbtxt, $deffb='Incorrect', $tol=.
 		}
 		if ($match>-1) {
 			if ($partial[$i+1]<1) {
-				return '<div class="feedbackwrap incorrect"><img src="'.$imasroot.'/img/redx.gif" alt="Incorrect"/> '.$fbtxt[$i/2].'</div>';
+				return '<div class="feedbackwrap incorrect"><img src="'.$imasroot.'/img/redx.gif" alt="Incorrect"/> '.$fbtxt[$match/2].'</div>';
 			} else {
-				return '<div class="feedbackwrap correct"><img src="'.$imasroot.'/img/gchk.gif" alt="Correct"/> '.$fbtxt[$i/2].'</div>';
+				return '<div class="feedbackwrap correct"><img src="'.$imasroot.'/img/gchk.gif" alt="Correct"/> '.$fbtxt[$match/2].'</div>';
 			}
 		} else {
 			return '<div class="feedbackwrap incorrect"><img src="'.$imasroot.'/img/redx.gif" alt="Incorrect"/> '.$deffb.'</div>';
@@ -2933,9 +2931,10 @@ function getfeedbacktxtcalculated($stu, $stunum, $partial, $fbtxt, $deffb='Incor
 		$match = -1;
 		if (!is_array($partial)) { $partial = explode(',',$partial);}
 		for ($i=0;$i<count($partial);$i+=2) {
+			$idx = $i/2;
 			if (is_array($requiretimes)) {
-				if ($requiretimes[$i]!='') {
-					if (checkreqtimes(str_replace(',','',$stu),$requiretimes[$i])==0) {
+				if ($requiretimes[$idx]!='') {
+					if (checkreqtimes(str_replace(',','',$stu),$requiretimes[$idx])==0) {
 						$rightanswrongformat = $i;
 						continue;
 					}
@@ -2947,8 +2946,8 @@ function getfeedbacktxtcalculated($stu, $stunum, $partial, $fbtxt, $deffb='Incor
 				}
 			}
 			if (is_array($answerformat)) {
-				if ($answerformat[$i]!='') {
-					if (checkanswerformat($stu,$answerformat[$i])==0) {
+				if ($answerformat[$idx]!='') {
+					if (checkanswerformat($stu,$answerformat[$idx])==0) {
 						$rightanswrongformat = $i;
 						continue;
 					}
@@ -2970,9 +2969,9 @@ function getfeedbacktxtcalculated($stu, $stunum, $partial, $fbtxt, $deffb='Incor
 		}
 		if ($match>-1) {
 			if ($partial[$i+1]<1) {
-				return '<div class="feedbackwrap incorrect"><img src="'.$imasroot.'/img/redx.gif" alt="Incorrect"/> '.$fbtxt[$i/2].'</div>';
+				return '<div class="feedbackwrap incorrect"><img src="'.$imasroot.'/img/redx.gif" alt="Incorrect"/> '.$fbtxt[$match/2].'</div>';
 			} else {
-				return '<div class="feedbackwrap correct"><img src="'.$imasroot.'/img/gchk.gif" alt="Correct"/> '.$fbtxt[$i/2].'</div>';
+				return '<div class="feedbackwrap correct"><img src="'.$imasroot.'/img/gchk.gif" alt="Correct"/> '.$fbtxt[$match/2].'</div>';
 			}
 		} else {
 			return '<div class="feedbackwrap incorrect"><img src="'.$imasroot.'/img/redx.gif" alt="Incorrect"/> '.$deffb.'</div>';
@@ -3117,8 +3116,8 @@ function getfeedbacktxtnumfunc($stu, $partial, $fbtxt, $deffb='Incorrect', $vars
 			}
 			if ($correct) {
 				if (is_array($requiretimes)) {
-					if ($requiretimes[$k]!='') {
-						if (checkreqtimes(str_replace(',','',$stuorig),$requiretimes[$k])==0) {
+					if ($requiretimes[$k/2]!='') {
+						if (checkreqtimes(str_replace(',','',$stuorig),$requiretimes[$k/2])==0) {
 							$rightanswrongformat = $k;
 							continue;
 						}
@@ -3452,10 +3451,18 @@ class Rand {
 			$min = (int)$min;
 			$max = (int)$max;
 			if ($min < $max) {
-				$this->seed ^= ($this->seed << 13);
-				$this->seed ^= ($this->seed >> 17);
-				$this->seed ^= ($this->seed << 5);
-				$this->seed &= 0x7fffffff;
+				if ($GLOBALS['assessver']>1) {
+					$this->seed = ($this->seed^($this->seed << 13)) & 0xffffffff;
+					if ($this->seed >  0x7fffffff) { $this->seed -= 0x100000000;}
+					$this->seed = ($this->seed^($this->seed >> 17)) & 0xffffffff;
+					if ($this->seed >  0x7fffffff) { $this->seed -= 0x100000000;}
+					$this->seed = ($this->seed^($this->seed << 5)) & 0x7fffffff;
+				} else { //broken; assessver=1 only
+					$this->seed ^= ($this->seed << 13);
+					$this->seed ^= ($this->seed >> 17);
+					$this->seed ^= ($this->seed << 5);
+					$this->seed &= 0x7fffffff;
+				}
 				return ($this->seed % ($max + 1 - $min)) + $min;
 			} else if($min > $max){
 				return $this->rand($max,$min);
@@ -3474,10 +3481,18 @@ class Rand {
 	public function shuffle(&$arr) {
 		if (isset($GLOBALS['assessver']) && $GLOBALS['assessver']>0) {
 			for ($i=count($arr)-1;$i>0;$i--) {
-				$this->seed ^= ($this->seed << 13);
-				$this->seed ^= ($this->seed >> 17);
-				$this->seed ^= ($this->seed << 5);
-				$this->seed &= 0x7fffffff;
+				if ($GLOBALS['assessver']>1) {
+					$this->seed = ($this->seed^($this->seed << 13)) & 0xffffffff;
+					if ($this->seed >  0x7fffffff) { $this->seed -= 0x100000000;}
+					$this->seed = ($this->seed^($this->seed >> 17)) & 0xffffffff;
+					if ($this->seed >  0x7fffffff) { $this->seed -= 0x100000000;}
+					$this->seed = ($this->seed^($this->seed << 5)) & 0x7fffffff;
+				} else { //broken; assessver=1 only
+					$this->seed ^= ($this->seed << 13);
+					$this->seed ^= ($this->seed >> 17);
+					$this->seed ^= ($this->seed << 5);
+					$this->seed &= 0x7fffffff;
+				}
 				$j = $this->seed % ($i+1); //$this->rand(0,$i);
 				if ($i!=$j) {
 					$tmp = $arr[$j];
