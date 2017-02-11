@@ -706,6 +706,10 @@ if ($overwriteBody==1) {
 		picsize = (picsize+1)%3;
 		picshow(picsize);
 	}
+	function chgpicsize() {
+		var size = document.getElementById("picsize").value;
+		picshow(size);
+	}
 	function picshow(size) {
 		if (size==0) {
 			els = document.getElementById("myTable").getElementsByTagName("img");
@@ -733,6 +737,10 @@ if ($overwriteBody==1) {
 	echo '<span class="column" style="width:auto;">';
 	echo "<a href=\"logingrid.php?cid=$cid\">View Login Grid</a><br/>";
 	echo "<a href=\"listusers.php?cid=$cid&assigncode=1\">Assign Sections and/or Codes</a><br/>";
+	echo 'Pictures: <select id="picsize" onchange="chgpicsize()">';
+	echo "<option value=0 selected>", _('None'), "</option>";
+	echo "<option value=1>", _('Small'), "</option>";
+	echo "<option value=2>", _('Big'), "</option></select>";
 	echo '</span>';
 	echo '<span class="column" style="width:auto;">';
 	echo "<a href=\"latepasses.php?cid=$cid\">Manage LatePasses</a>";
@@ -769,7 +777,7 @@ if ($overwriteBody==1) {
 			echo '<input type=submit name=submit value="Unenroll" title="Unenroll the selected students">';
 		}
 		?>
-		<input type="button" value="Pictures" onclick="rotatepics()" title="View/hide student pictures, if available"/></p>
+		</p>
 
 	<table class=gb id=myTable>
 		<thead>
