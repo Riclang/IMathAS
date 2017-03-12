@@ -89,6 +89,7 @@
 			unset($userid);
 		 }
 	 } else {
+	 	 //no reason we should be here...
 		 if (isset($_SERVER['QUERY_STRING'])) {
 			 $querys = '?'.$_SERVER['QUERY_STRING'].(isset($addtoquerystring)?'&'.$addtoquerystring:'');
 		 } else {
@@ -256,50 +257,59 @@
 			 $sessiondata['mathdisp'] = $_POST['mathdisp']; //to allow for accessibility
 			 $sessiondata['graphdisp'] = 0;
 			 $sessiondata['useed'] = 0;
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else if ($_POST['access']==2) { //img graphs
 		 	 //deprecated
 			 $sessiondata['mathdisp'] = 2-$_POST['mathdisp'];
 			 $sessiondata['graphdisp'] = 2;
 			 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else if ($_POST['access']==4) { //img math
 		 	 //deprecated
 			 $sessiondata['mathdisp'] = 2;
 			 $sessiondata['graphdisp'] = $_POST['graphdisp'];
 			 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else if ($_POST['access']==3) { //img all
 			 $sessiondata['mathdisp'] = 2;
 			 $sessiondata['graphdisp'] = 2;
 			 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else if ($_POST['access']==5) { //mathjax experimental
 		 	 //deprecated, as mathjax is now default
 		 	 $sessiondata['mathdisp'] = 1;
 			 $sessiondata['graphdisp'] = $_POST['graphdisp'];
 			 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else if ($_POST['access']==6) { //katex experimental
 		 	 $sessiondata['mathdisp'] = 6;
 			 $sessiondata['graphdisp'] = $_POST['graphdisp'];
 			 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else if (!empty($_POST['isok'])) {
 			 $sessiondata['mathdisp'] = 1;
 			 $sessiondata['graphdisp'] = 1;
 			 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 } else {
 		 	 $sessiondata['mathdisp'] = 2-$_POST['mathdisp'];
 		 	 $sessiondata['graphdisp'] = $_POST['graphdisp'];
 		 	 $sessiondata['useed'] = checkeditorok();
-			 $enc = base64_encode(serialize($sessiondata));
 		 }
 
 		 if (!isset($_POST['tzoffset'])) {
 			 $_POST['tzoffset'] = 0;
 		 }
+		 if (strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
+			$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
+			$stm->execute(array(':id'=>$userid));
+			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+				$userprefs[$row[0]] = $row[1];
+			}
+			if (isset($userprefs['tzname'])) {
+				$_POST['tzname'] = $userprefs['tzname'];
+			}
+			foreach(array('graphdisp','mathdisp','useed') as $key) {
+				if (isset($userprefs[$key])) {
+					$sessiondata[$key] = $userprefs[$key];
+				}
+			}
+		 }
+		 $enc = base64_encode(serialize($sessiondata));
+
 		 if (isset($_POST['tzname']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
 		 	 //DB $query = "INSERT INTO imas_sessions (sessionid,userid,time,tzoffset,tzname,sessiondata) VALUES ('$sessionid','$userid',$now,'{$_POST['tzoffset']}','{$_POST['tzname']}','$enc')";
        //DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
@@ -380,7 +390,7 @@
 	//DB $query .= " FROM imas_users WHERE id='$userid'";
 	//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 	//DB $line = mysql_fetch_array($result, MYSQL_ASSOC);
-  $query .= " FROM imas_users WHERE id=:id";
+	$query .= " FROM imas_users WHERE id=:id";
 	$stm = $DBH->prepare($query);
 	$stm->execute(array(':id'=>$userid));
 	$line = $stm->fetch(PDO::FETCH_ASSOC);
@@ -392,11 +402,23 @@
 	$listperpage = $line['listperpage'];
 	$selfhasuserimg = $line['hasuserimg'];
 	$usertheme = $line['theme'];
-	$FCMtoken = $line['FCMtoken'];
 	if (isset($usertheme) && $usertheme!='') {
 		$coursetheme = $usertheme;
 	}
+	$FCMtoken = $line['FCMtoken'];
 	$userfullname = $line['FirstName'] . ' ' . $line['LastName'];
+	$userprefs = array();
+	if (strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
+		$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
+		$stm->execute(array(':id'=>$userid));
+		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+			$userprefs[$row[0]] = $row[1];
+		}
+		if (isset($userprefs['usertheme'])) {
+			$coursetheme = $userprefs['usertheme'];
+		}
+	}
+	
 	$previewshift = -1;
 	$basephysicaldir = rtrim(dirname(__FILE__), '/\\');
 	if ($myrights==100 && (isset($_GET['debug']) || isset($sessiondata['debugmode']))) {
@@ -567,6 +589,8 @@
 			$coursetheme = $crow[5]; //mysql_result($result,0,5);
 			if (isset($usertheme) && $usertheme!='') {
 				$coursetheme = $usertheme;
+			} else if (isset($userprefs['usertheme'])) {
+				$sessiondata['coursetheme'] = $userprefs['usertheme'];
 			} else if (isset($CFG['CPS']['theme']) && $CFG['CPS']['theme'][1]==0) {
 				$coursetheme = $defaultcoursetheme;
 			} else if (isset($CFG['CPS']['themelist']) && strpos($CFG['CPS']['themelist'], $coursetheme)===false) {

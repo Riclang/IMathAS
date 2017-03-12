@@ -1,7 +1,7 @@
 <?php
 //change counter; increase by 1 each time a change is made
 //TODO:  change linked text tex to mediumtext
-$latest = 119;
+$latest = 120;
 
 
 @set_time_limit(0);
@@ -1931,6 +1931,20 @@ span.instronly {
 			 if ($res===false) {
 			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
 			 }
+		}
+		if ($last<120) {
+			$query = 'CREATE TABLE `imas_user_prefs` (
+				  `id` INT( 10 ) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+				  `item` VARCHAR(31) NOT NULL,
+				  `value` VARCHAR(31) NOT NULL,
+				  `userid` INT(10) unsigned NOT NULL,
+				  INDEX (`userid`)
+				) ENGINE=InnoDB;';
+			$res = $DBH->query($query);
+			 if ($res===false) {
+			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
+			 }
+			 echo '<p>table imas_user_prefs created</p>';
 		}
 		/*$handle = fopen("upgradecounter.txt",'w');
 		if ($handle===false) {
