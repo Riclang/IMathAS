@@ -293,18 +293,36 @@
 		 if (!isset($_POST['tzoffset'])) {
 			 $_POST['tzoffset'] = 0;
 		 }
+		 $sessiondata['userprefs'] = array();
+		 $prefdefaults = array(
+			'mathdisp'=>1,
+			'graphdisp'=>1,
+			'drawentry'=>1,
+			'useed'=>1,
+			'tztype'=>0,
+			'usertheme'=>0,
+			'livepreview'=>1);
 		 if (strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
 			$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
 			$stm->execute(array(':id'=>$userid));
 			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-				$userprefs[$row[0]] = $row[1];
+				$sessiondata['userprefs'][$row[0]] = $row[1];
 			}
-			if (isset($userprefs['tzname'])) {
-				$_POST['tzname'] = $userprefs['tzname'];
+			if (isset($sessiondata['userprefs']['tzname'])) {
+				$_POST['tzname'] = $sessiondata['userprefs']['tzname'];
 			}
 			foreach(array('graphdisp','mathdisp','useed') as $key) {
-				if (isset($userprefs[$key])) {
-					$sessiondata[$key] = $userprefs[$key];
+				if (isset($sessiondata['userprefs'][$key])) {
+					$sessiondata[$key] = $sessiondata['userprefs'][$key];
+				}
+			}
+			foreach($prefdefaults as $key=>$def) {
+				if (isset($sessiondata['userprefs'][$key])) {
+					$sessiondata[$key] = $sessiondata['userprefs'][$key];
+				} else if (isset($CFG['UP'][$key])) {
+					$sessiondata[$key] = $CFG['UP'][$key];
+				} else {
+					$sessiondata[$key] = $prefdefaults[$key];
 				}
 			}
 		 }
@@ -408,15 +426,20 @@
 	$FCMtoken = $line['FCMtoken'];
 	$userfullname = $line['FirstName'] . ' ' . $line['LastName'];
 	$userprefs = array();
-	if (strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
+	if (!isset($sessiondata['userprefs']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
+		//userprefs are missing!  They should be defined.
+		//we should never be here
+		$sessiondata['userprefs'] = array();
 		$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
 		$stm->execute(array(':id'=>$userid));
 		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-			$userprefs[$row[0]] = $row[1];
+			$sessiondata['userprefs'][$row[0]] = $row[1];
 		}
-		if (isset($userprefs['usertheme'])) {
-			$coursetheme = $userprefs['usertheme'];
+		if (isset($sessiondata['userprefs']['usertheme'])) {
+			$coursetheme = $sessiondata['userprefs']['usertheme'];
 		}
+		//TODO: if we hit this, probably should reset the rest of the session variables to
+		//can use to reload session variable after changing
 	}
 	
 	$previewshift = -1;

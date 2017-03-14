@@ -372,8 +372,8 @@
 			$sessiondata['coursetheme'] = $courseinfo['theme'];
 			if (isset($usertheme) && $usertheme!='') {
 				$sessiondata['coursetheme'] = $usertheme;
-			} else if (isset($userprefs['usertheme'])) {
-				$sessiondata['coursetheme'] = $userprefs['usertheme'];
+			} else if (isset($sessiondata['userprefs']['usertheme'])) {
+				$sessiondata['coursetheme'] = $sessiondata['userprefs']['usertheme'];
 			}
 			//DB $sessiondata['coursetopbar'] =  mysql_result($result,0,2);
 			//DB $sessiondata['msgqtoinstr'] = (floor( mysql_result($result,0,3)/5))&2;

@@ -186,6 +186,7 @@ switch($_GET['action']) {
 			echo '</span><br class="form" />';
 
 		}
+		/*  moved to user prefs
 		echo '<span class="form"><label for="theme">'._('Overwrite default course theme on all pages:').'</label></span><span class="formright">';
 		echo '<select name="theme" id="theme">';
 		echo '<option value="" '.($line['theme']==''?'selected':'').'>'._('Use course default theme').'</option>';
@@ -198,6 +199,7 @@ switch($_GET['action']) {
 			echo '<option value="highcontrast_dark.css" '.($line['theme']=='highcontrast_dark.css'?'selected':'').'>'._('High contrast, light on dark').'</option>';
 		}
 		echo '</select><br class="form" />';
+		*/
 
 		if (isset($CFG['GEN']['translatewidgetID'])) {
 			echo '<span class="form">Attempt to translate pages into another language:</span>';
@@ -208,6 +210,86 @@ switch($_GET['action']) {
 			echo ' }</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>';
 			echo '<br class="form"/>';
 			unset($CFG['GEN']['translatewidgetID']);
+		}
+		echo '</fieldset>';
+		
+		$prefs = array();
+		$prefs['mathdisp'] = array(
+			'1'=>_('MathJax'),
+			'6'=>_('Katex'),
+			'2'=>_('Image-based'),
+			'0'=>_('Calculator-style'));
+		$prefs['graphdisp'] = array(
+			'1'=>_('SVG'),
+			'2'=>_('Imaged-based'),
+			'0'=>_('Text-based alternative'));
+		$prefs['drawentry'] = array(
+			'1'=>_('Mouse-based drawing entry'),
+			'0'=>_('Text-based drawing entry alternative'));
+		$prefs['useed'] = array(
+			'1'=>_('Rich text editor'),
+			'0'=>_('Plain text entry'));
+		$prefs['tztype'] = array(
+			'0'=>_('Use timezone as reported by the browser'),
+			'1'=>_('Use a specific timezone for this session only'),
+			'2'=>_('Always show times based on a specific timezone'));
+		if ($tzname!='') {
+			$prefs['tztype']['0'] = sprintf(_('Use timezone as reported by the browser, currently <b>%s</b>'), $tzname);	
+		}
+		$prefs['usertheme'] = array(
+			'0'=>_('Use instructor chosen course theme')); 
+		if (isset($CFG['GEN']['stuthemes'])) {
+			foreach ($CFG['GEN']['stuthemes'] as $k=>$v) {
+				$prefs['usertheme'][$k] = $v;
+			}
+		} else {
+			$prefs['usertheme']['highcontrast.css']=_('High contrast, dark on light'),
+			$prefs['usertheme']['highcontrast_dark.css']=_('High contrast, light on dark');
+		}
+		$prefs['livepreview'] = array(
+			'1'=>_('Show live preview of answer entry'),
+			'0'=>_('Only show a preview when I click the Preview button'));
+		$prefdefaults = array(
+			'mathdisp'=>1,
+			'graphdisp'=>1,
+			'drawentry'=>1,
+			'useed'=>1,
+			'tztype'=>0,
+			'usertheme'=>0,
+			'livepreview'=>1);
+		$prefdescript = array(
+			'mathdisp'=>_('Math Display'),
+			'graphdisp'=>_('Graph Display'),
+			'drawentry'=>_('Drawing Entry'),
+			'useed'=>_('Text Editor'),
+			'tztype'=>_('Time Zone'),
+			'usertheme'=>_('Course styling and contrast'),
+			'livepreview'=>_('Live preview'));
+		
+		foreach($prefdefaults as $k=>$v) {
+			if (isset($CFG['UP'][$k])) {
+				$prefdefaults[$k] = $CFG['UP'][$k];
+			}
+			//mark default etnry with *
+			$prefs[$k][$prefdefaults[$k]] = '* '.$prefs[$k][$prefdefaults[$k]];
+		}
+		$timezones = array('Etc/GMT+12', 'Pacific/Pago_Pago', 'America/Adak', 'Pacific/Honolulu', 'Pacific/Marquesas', 'Pacific/Gambier', 'America/Anchorage', 'America/Los_Angeles', 'Pacific/Pitcairn', 'America/Phoenix', 'America/Denver', 'America/Guatemala', 'America/Chicago', 'Pacific/Easter', 'America/Bogota', 'America/New_York', 'America/Caracas', 'America/Halifax', 'America/Santo_Domingo', 'America/Santiago', 'America/St_Johns', 'America/Godthab', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'Etc/GMT+2', 'Etc/GMT+2', 'Atlantic/Azores', 'Atlantic/Cape_Verde', 'Etc/UTC', 'Europe/London', 'Europe/Berlin', 'Africa/Lagos', 'Africa/Windhoek', 'Asia/Beirut', 'Africa/Johannesburg', 'Asia/Baghdad', 'Europe/Moscow', 'Asia/Tehran', 'Asia/Dubai', 'Asia/Baku', 'Asia/Kabul', 'Asia/Yekaterinburg', 'Asia/Karachi', 'Asia/Kolkata', 'Asia/Kathmandu', 'Asia/Dhaka', 'Asia/Omsk', 'Asia/Rangoon', 'Asia/Krasnoyarsk', 'Asia/Jakarta', 'Asia/Shanghai', 'Asia/Irkutsk', 'Australia/Eucla', 'Australia/Eucla', 'Asia/Yakutsk', 'Asia/Tokyo', 'Australia/Darwin', 'Australia/Adelaide', 'Australia/Brisbane', 'Asia/Vladivostok', 'Australia/Sydney', 'Australia/Lord_Howe', 'Asia/Kamchatka', 'Pacific/Noumea', 'Pacific/Norfolk', 'Pacific/Auckland', 'Pacific/Tarawa', 'Pacific/Chatham', 'Pacific/Tongatapu', 'Pacific/Apia', 'Pacific/Kiritimati');
+				
+		echo '<fieldset id="userinfoprefs"><legend>'._('Accessibility and Display Preferences').'</legend>';
+		echo '<p>'._('Default settings are shown with a *').'</p>';
+		foreach ($prefdescript as $key=>$descrip) {
+			echo '<span class=form><label for="mathdisp">'.$descript.'</label></span>';
+			echo '<span class=formright>';
+			writeHtmlSelect($key,array_keys($prefs[$key]), array_values($prefs[$key]), isset($sessiondata['userprefs'][$key])?$sessiondata['userprefs'][$key]:$prefdefauls[$key]);
+			if ($key=='tztype') {
+				echo '<br/>';
+				echo _('Set timezone to:').' <select name="settimezone" id="settimezone">';
+				foreach ($timezones as $tz) {
+					echo '<option value="'.$tz.'" '.($tz==$tzname?'selected':'').'>'.$tz.'</option>';
+				}
+				echo '</select>';
+			}
+			echo '</span><br class=form/>';
 		}
 		echo '</fieldset>';
 
@@ -254,6 +336,7 @@ switch($_GET['action']) {
 			echo '</fieldset>';
 
 		}
+		/*  moved to user prefs
 		if ($tzname!='') {
 			echo '<fieldset><legend>Timezone</legend>';
 			echo '<p>Due Dates and other times are being shown to you correct for the <b>'.$tzname.'</b> timezone.</p>';
@@ -268,6 +351,7 @@ switch($_GET['action']) {
 
 
 		}
+		*/
 		echo "<div class=submit><input type=submit value='Update Info'></div>\n";
 
 		//echo '<p><a href="forms.php?action=googlegadget">Get Google Gadget</a> to monitor your messages and forum posts</p>';
