@@ -1945,6 +1945,13 @@ span.instronly {
 			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
 			 }
 			 echo '<p>table imas_user_prefs created</p>';
+			 
+			 //move usertheme from imas_users to imas_user_prefs
+			 $query = "INSERT INTO imas_user_prefs (item,value,userid) SELECT 'usertheme',theme,id FROM imas_users WHERE theme<>''";
+			 $res = $DBH->query($query);
+			 if ($res===false) {
+			 	 echo "<p>Query failed: ($query) : ".$DBH->errorInfo()."</p>";
+			 }
 		}
 		/*$handle = fopen("upgradecounter.txt",'w');
 		if ($handle===false) {

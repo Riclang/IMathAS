@@ -2,13 +2,14 @@
 //IMathAS:  Basic forms
 //(c) 2006 David Lippman
 require("config.php");
+require("includes/htmlutil.php");
 if ($_GET['action']!="newuser" && $_GET['action']!="resetpw" && $_GET['action']!="lookupusername") {
 	require("validate.php");
 } else {
 	if (isset($CFG['CPS']['theme'])) {
 		$defaultcoursetheme = $CFG['CPS']['theme'][0];
 	} else if (!isset($defaultcoursetheme)) {
-		 $defaultcoursetheme = "default.css";
+		$defaultcoursetheme = "default.css";
 	}
 	$coursetheme = $defaultcoursetheme;
 }
@@ -19,8 +20,10 @@ if (isset($_GET['greybox'])) {
 } else {
 	$gb = '';
 }
+if ($_GET['action']=='chguserinfo') {
+	$placeinhead = "<script type=\"text/javascript\" src=\"$imasroot/javascript/jstz_min.js\" ></script>";
+}
 require("header.php");
-
 switch($_GET['action']) {
 	case "newuser":
 		if ($gb == '') {
@@ -215,27 +218,24 @@ switch($_GET['action']) {
 		
 		$prefs = array();
 		$prefs['mathdisp'] = array(
-			'1'=>_('MathJax'),
-			'6'=>_('Katex'),
-			'2'=>_('Image-based'),
-			'0'=>_('Calculator-style'));
+			'1'=>_('MathJax - best display and best for screenreaders'),
+			'6'=>_('Katex - faster display'),
+			'2'=>_('Image-based display'),
+			'0'=>_('Calculator-style linear display, like x^2/3'));
 		$prefs['graphdisp'] = array(
-			'1'=>_('SVG'),
-			'2'=>_('Imaged-based'),
-			'0'=>_('Text-based alternative'));
+			'1'=>_('SVG in browser - highest quality'),
+			'2'=>_('Imaged-based - visual alternative'),
+			'0'=>_('Text alternatives - tables or charts in place of graphs'));
 		$prefs['drawentry'] = array(
-			'1'=>_('Mouse-based drawing entry'),
-			'0'=>_('Text-based drawing entry alternative'));
+			'1'=>_('Mouse-based visual drawing entry'),
+			'0'=>_('Keyboard and text-based drawing entry alternative'));
 		$prefs['useed'] = array(
-			'1'=>_('Rich text editor'),
+			'1'=>_('Rich text editor with formatting buttons'),
 			'0'=>_('Plain text entry'));
 		$prefs['tztype'] = array(
 			'0'=>_('Use timezone as reported by the browser'),
 			'1'=>_('Use a specific timezone for this session only'),
 			'2'=>_('Always show times based on a specific timezone'));
-		if ($tzname!='') {
-			$prefs['tztype']['0'] = sprintf(_('Use timezone as reported by the browser, currently <b>%s</b>'), $tzname);	
-		}
 		$prefs['usertheme'] = array(
 			'0'=>_('Use instructor chosen course theme')); 
 		if (isset($CFG['GEN']['stuthemes'])) {
@@ -243,11 +243,11 @@ switch($_GET['action']) {
 				$prefs['usertheme'][$k] = $v;
 			}
 		} else {
-			$prefs['usertheme']['highcontrast.css']=_('High contrast, dark on light'),
+			$prefs['usertheme']['highcontrast.css']=_('High contrast, dark on light');
 			$prefs['usertheme']['highcontrast_dark.css']=_('High contrast, light on dark');
 		}
 		$prefs['livepreview'] = array(
-			'1'=>_('Show live preview of answer entry'),
+			'1'=>_('Show live preview of answer entry as I type'),
 			'0'=>_('Only show a preview when I click the Preview button'));
 		$prefdefaults = array(
 			'mathdisp'=>1,
@@ -273,23 +273,39 @@ switch($_GET['action']) {
 			//mark default etnry with *
 			$prefs[$k][$prefdefaults[$k]] = '* '.$prefs[$k][$prefdefaults[$k]];
 		}
+		$sessiondata['userprefs']['tztype'] = isset($sessiondata['userprefs']['tzname'])?2:0;
+		
 		$timezones = array('Etc/GMT+12', 'Pacific/Pago_Pago', 'America/Adak', 'Pacific/Honolulu', 'Pacific/Marquesas', 'Pacific/Gambier', 'America/Anchorage', 'America/Los_Angeles', 'Pacific/Pitcairn', 'America/Phoenix', 'America/Denver', 'America/Guatemala', 'America/Chicago', 'Pacific/Easter', 'America/Bogota', 'America/New_York', 'America/Caracas', 'America/Halifax', 'America/Santo_Domingo', 'America/Santiago', 'America/St_Johns', 'America/Godthab', 'America/Argentina/Buenos_Aires', 'America/Montevideo', 'Etc/GMT+2', 'Etc/GMT+2', 'Atlantic/Azores', 'Atlantic/Cape_Verde', 'Etc/UTC', 'Europe/London', 'Europe/Berlin', 'Africa/Lagos', 'Africa/Windhoek', 'Asia/Beirut', 'Africa/Johannesburg', 'Asia/Baghdad', 'Europe/Moscow', 'Asia/Tehran', 'Asia/Dubai', 'Asia/Baku', 'Asia/Kabul', 'Asia/Yekaterinburg', 'Asia/Karachi', 'Asia/Kolkata', 'Asia/Kathmandu', 'Asia/Dhaka', 'Asia/Omsk', 'Asia/Rangoon', 'Asia/Krasnoyarsk', 'Asia/Jakarta', 'Asia/Shanghai', 'Asia/Irkutsk', 'Australia/Eucla', 'Australia/Eucla', 'Asia/Yakutsk', 'Asia/Tokyo', 'Australia/Darwin', 'Australia/Adelaide', 'Australia/Brisbane', 'Asia/Vladivostok', 'Australia/Sydney', 'Australia/Lord_Howe', 'Asia/Kamchatka', 'Pacific/Noumea', 'Pacific/Norfolk', 'Pacific/Auckland', 'Pacific/Tarawa', 'Pacific/Chatham', 'Pacific/Tongatapu', 'Pacific/Apia', 'Pacific/Kiritimati');
 				
 		echo '<fieldset id="userinfoprefs"><legend>'._('Accessibility and Display Preferences').'</legend>';
-		echo '<p>'._('Default settings are shown with a *').'</p>';
+		echo '<p>'._('Default settings are indicated with a *').'</p>';
 		foreach ($prefdescript as $key=>$descrip) {
-			echo '<span class=form><label for="mathdisp">'.$descript.'</label></span>';
+			echo '<span class=form><label for="'.$key.'">'.$descrip.'</label></span>';
 			echo '<span class=formright>';
-			writeHtmlSelect($key,array_keys($prefs[$key]), array_values($prefs[$key]), isset($sessiondata['userprefs'][$key])?$sessiondata['userprefs'][$key]:$prefdefauls[$key]);
+			writeHtmlSelect($key,array_keys($prefs[$key]), array_values($prefs[$key]), isset($sessiondata['userprefs'][$key])?$sessiondata['userprefs'][$key]:$prefdefaults[$key]);
 			if ($key=='tztype') {
-				echo '<br/>';
+				echo '<span id="tzset" style="display:none;"><br/>';
 				echo _('Set timezone to:').' <select name="settimezone" id="settimezone">';
 				foreach ($timezones as $tz) {
 					echo '<option value="'.$tz.'" '.($tz==$tzname?'selected':'').'>'.$tz.'</option>';
 				}
-				echo '</select>';
+				echo '</select></span>';
+				echo '<script type="text/javascript"> $(function() {
+					var oldval = $("#tztype option[value=0]").text();
+					$("#tztype option[value=0]").text(oldval + ": "+jstz.determine().name());
+					if ($("#tztype").val()==0 && $("#settimezone").val()!=jstz.determine().name()) {
+						$("#tztype").val(1);
+					}	
+					$("#tztype").on("change", function() {
+						if ($(this).val()==0) { 
+							$("#tzset").hide();
+							$("#settimezone").val(jstz.determine().name());
+						} else {
+							$("#tzset").show();
+						}
+						}).trigger("change");});</script>';
 			}
-			echo '</span><br class=form/>';
+			echo '</span><br class=form />';
 		}
 		echo '</fieldset>';
 

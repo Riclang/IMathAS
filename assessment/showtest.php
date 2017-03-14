@@ -370,9 +370,11 @@
 			//DB $sessiondata['coursetheme'] = mysql_result($result,0,1);
 			$sessiondata['coursename'] = $courseinfo['name'];
 			$sessiondata['coursetheme'] = $courseinfo['theme'];
-			if (isset($usertheme) && $usertheme!='') {
+			/*if (isset($usertheme) && $usertheme!='') {
 				$sessiondata['coursetheme'] = $usertheme;
-			} else if (isset($sessiondata['userprefs']['usertheme'])) {
+			} else 
+			*/
+			if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
 				$sessiondata['coursetheme'] = $sessiondata['userprefs']['usertheme'];
 			}
 			//DB $sessiondata['coursetopbar'] =  mysql_result($result,0,2);

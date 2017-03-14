@@ -299,8 +299,6 @@
 			'graphdisp'=>1,
 			'drawentry'=>1,
 			'useed'=>1,
-			'tztype'=>0,
-			'usertheme'=>0,
 			'livepreview'=>1);
 		 if (strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
 			$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
@@ -311,18 +309,18 @@
 			if (isset($sessiondata['userprefs']['tzname'])) {
 				$_POST['tzname'] = $sessiondata['userprefs']['tzname'];
 			}
+			foreach($prefdefaults as $key=>$def) {
+				if (isset($sessiondata['userprefs'][$key])) {
+					//keep it
+				} else if (isset($CFG['UP'][$key])) {
+					$sessiondata['userprefs'][$key] = $CFG['UP'][$key];
+				} else {
+					$sessiondata['userprefs'][$key] = $prefdefaults[$key];
+				}
+			}
 			foreach(array('graphdisp','mathdisp','useed') as $key) {
 				if (isset($sessiondata['userprefs'][$key])) {
 					$sessiondata[$key] = $sessiondata['userprefs'][$key];
-				}
-			}
-			foreach($prefdefaults as $key=>$def) {
-				if (isset($sessiondata['userprefs'][$key])) {
-					$sessiondata[$key] = $sessiondata['userprefs'][$key];
-				} else if (isset($CFG['UP'][$key])) {
-					$sessiondata[$key] = $CFG['UP'][$key];
-				} else {
-					$sessiondata[$key] = $prefdefaults[$key];
 				}
 			}
 		 }
@@ -419,13 +417,13 @@
 	$userdeflib = $line['deflib'];
 	$listperpage = $line['listperpage'];
 	$selfhasuserimg = $line['hasuserimg'];
-	$usertheme = $line['theme'];
+	/*$usertheme = $line['theme'];
 	if (isset($usertheme) && $usertheme!='') {
 		$coursetheme = $usertheme;
 	}
+	*/
 	$FCMtoken = $line['FCMtoken'];
 	$userfullname = $line['FirstName'] . ' ' . $line['LastName'];
-	$userprefs = array();
 	if (!isset($sessiondata['userprefs']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
 		//userprefs are missing!  They should be defined.
 		//we should never be here
@@ -435,13 +433,12 @@
 		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 			$sessiondata['userprefs'][$row[0]] = $row[1];
 		}
-		if (isset($sessiondata['userprefs']['usertheme'])) {
-			$coursetheme = $sessiondata['userprefs']['usertheme'];
-		}
 		//TODO: if we hit this, probably should reset the rest of the session variables to
 		//can use to reload session variable after changing
 	}
-	
+	if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
+		$coursetheme = $sessiondata['userprefs']['usertheme'];
+	}
 	$previewshift = -1;
 	$basephysicaldir = rtrim(dirname(__FILE__), '/\\');
 	if ($myrights==100 && (isset($_GET['debug']) || isset($sessiondata['debugmode']))) {
@@ -610,10 +607,12 @@
 			$crow = $stm->fetch(PDO::FETCH_NUM);
 			$coursename = $crow[0]; //mysql_result($result,0,0);
 			$coursetheme = $crow[5]; //mysql_result($result,0,5);
-			if (isset($usertheme) && $usertheme!='') {
+			/*if (isset($usertheme) && $usertheme!='') {
 				$coursetheme = $usertheme;
-			} else if (isset($userprefs['usertheme'])) {
-				$sessiondata['coursetheme'] = $userprefs['usertheme'];
+			} else 
+			*/
+			if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
+				$coursetheme = $sessiondata['userprefs']['usertheme'];
 			} else if (isset($CFG['CPS']['theme']) && $CFG['CPS']['theme'][1]==0) {
 				$coursetheme = $defaultcoursetheme;
 			} else if (isset($CFG['CPS']['themelist']) && strpos($CFG['CPS']['themelist'], $coursetheme)===false) {
