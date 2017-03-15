@@ -771,74 +771,9 @@ ini_set("post_max_size", "10485760");
 			}
 		}
 
-		//save user prefs.  Get existing
-		$currentuserprefs = array();
-		$stm = $DBH->prepare("SELECT item,id,value FROM imas_user_prefs WHERE userid=:id");
-		$stm->execute(array(':id'=>$userid));
-		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-			$currentuserprefs[$row[0]] = array($row[1],$row[2]);
-		}
-		$prefdefaults = array(
-			'mathdisp'=>1,
-			'graphdisp'=>1,
-			'drawentry'=>1,
-			'useed'=>1,
-			'usertheme'=>0,
-			'livepreview'=>1);
-		foreach($prefdefaults as $k=>$v) {
-			$sessiondata['userprefs'][$k] = $_POST[$k];
-			if (isset($CFG['UP'][$k])) {
-				$prefdefaults[$k] = $CFG['UP'][$k];
-			}
-			if (strcmp($_POST[$k],$prefdefaults[$k])==0) { //selected default
-				if (isset($currentuserprefs[$k])) {
-					$stm = $DBH->prepare("DELETE FROM imas_user_prefs WHERE id=:id");
-					$stm->execute(array(':id'=>$currentuserprefs[$k][0]));
-					if ($k=='usertheme') {
-						unset($sessiondata['userprefs'][$k]);
-						unset($sessiondata['coursetheme']);
-					}
-				}
-			} else {
-				if (isset($currentuserprefs[$k])) {
-					if (strcmp($currentuserprefs[$k][1],$_POST[$k])!=0) {
-						//new value - update
-						$stm = $DBH->prepare("UPDATE imas_user_prefs SET value=:value WHERE id=:id");
-						$stm->execute(array(':value'=>$_POST[$k], ':id'=>$currentuserprefs[$k][0]));
-					}
-				} else { //no current value - create new pref entry
-					$stm = $DBH->prepare("INSERT INTO imas_user_prefs (item,value,userid) VALUES (:item,:value,:userid)");
-					$stm->execute(array(':item'=>$k, ':value'=>$_POST[$k], ':userid'=>$userid));
-				}
-			}
-		}
-		//use timezone from form - either browser reported or set val
-
-		if (date_default_timezone_set($_POST['settimezone'])) {
-			$tzname = $_POST['settimezone'];
-			$stm = $DBH->prepare("UPDATE imas_sessions SET tzname=:tzname WHERE sessionid=:sessionid");
-			$stm->execute(array(':tzname'=>$tzname, ':sessionid'=>$sessionid));
-		}
-		if ($_POST['tztype']==2) { //using a permanant fixed timezone - record it     
-			$sessiondata['userprefs']['tzname'] = $tzname;
-			if (isset($currentuserprefs['tzname'])) {
-				$stm = $DBH->prepare("UPDATE imas_user_prefs SET value=:value WHERE id=:id");
-				$stm->execute(array(':value'=>$_POST['settimezone'], ':id'=>$currentuserprefs['tzname'][0]));
-			} else {
-				$stm = $DBH->prepare("INSERT INTO imas_user_prefs (item,value,userid) VALUES ('tzname',:value,:userid)");
-				$stm->execute(array(':value'=>$_POST['settimezone'], ':userid'=>$userid));
-			}
-		} else { //no permanant fixed timezone, delete tzname record if exists
-			unset($sessiondata['userprefs']['tzname']);
-			if (isset($currentuserprefs['tzname'])) {
-				$stm = $DBH->prepare("DELETE FROM imas_user_prefs WHERE id=:id");
-				$stm->execute(array(':id'=>$currentuserprefs['tzname'][0]));
-			}
-		}
-		foreach(array('graphdisp','mathdisp','useed') as $key) {
-			$sessiondata[$key] = $sessiondata['userprefs'][$key];
-		}
-		writesessiondata();
+		require("includes/userprefs.php");
+		storeUserPrefs();
+		
 		
 		/* moved above
 		if (isset($_POST['settimezone'])) {
