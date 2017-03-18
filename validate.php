@@ -424,6 +424,7 @@
 	*/
 	$FCMtoken = $line['FCMtoken'];
 	$userfullname = $line['FirstName'] . ' ' . $line['LastName'];
+	$inInstrStuView = false;
 	if (!isset($sessiondata['userprefs']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
 		//userprefs are missing!  They should be defined.
 		//we should never be here
@@ -439,7 +440,7 @@
 	if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
 		$coursetheme = $sessiondata['userprefs']['usertheme'];
 	}
-	$previewshift = -1;
+	
 	$basephysicaldir = rtrim(dirname(__FILE__), '/\\');
 	if ($myrights==100 && (isset($_GET['debug']) || isset($sessiondata['debugmode']))) {
 		ini_set('display_errors',1);
@@ -572,7 +573,7 @@
 						writesessiondata();
 					}
 					if (isset($sessiondata['stuview'])) {
-						$previewshift = $sessiondata['stuview'];
+						$inInstrStuView = true;
 						unset($teacherid);
 						$studentid = $line['id'];
 					}
@@ -597,16 +598,15 @@
 
 			}
 		}
-		$query = "SELECT imas_courses.name,imas_courses.available,imas_courses.lockaid,imas_courses.copyrights,imas_users.groupid,imas_courses.theme,imas_courses.newflag,imas_courses.msgset,imas_courses.topbar,imas_courses.toolset,imas_courses.deftime,imas_courses.picicons,imas_courses.latepasshrs ";
+		$query = "SELECT imas_courses.name,imas_courses.available,imas_courses.lockaid,imas_courses.copyrights,imas_users.groupid,imas_courses.theme,imas_courses.newflag,imas_courses.msgset,imas_courses.toolset,imas_courses.deftime,imas_courses.picicons,imas_courses.latepasshrs ";
 		$query .= "FROM imas_courses JOIN imas_users ON imas_users.id=imas_courses.ownerid WHERE imas_courses.id=:id";
 		$stm = $DBH->prepare($query);
 		$stm->execute(array(':id'=>$cid));
 		if ($stm->rowCount()>0) {
 			//DB $crow = mysql_fetch_row($result);
-      //TODO: change to assoc
-			$crow = $stm->fetch(PDO::FETCH_NUM);
-			$coursename = $crow[0]; //mysql_result($result,0,0);
-			$coursetheme = $crow[5]; //mysql_result($result,0,5);
+			$crow = $stm->fetch(PDO::FETCH_ASSOC);
+			$coursename = $crow['name']; //mysql_result($result,0,0);
+			$coursetheme = $crow['theme']; //mysql_result($result,0,5);
 			/*if (isset($usertheme) && $usertheme!='') {
 				$coursetheme = $usertheme;
 			} else 
@@ -618,28 +618,23 @@
 			} else if (isset($CFG['CPS']['themelist']) && strpos($CFG['CPS']['themelist'], $coursetheme)===false) {
 				$coursetheme = $defaultcoursetheme;
 			}
-			$coursenewflag = $crow[6]; //mysql_result($result,0,6);
-			$coursemsgset = $crow[7]%5;
-			$coursetopbar = explode('|',$crow[8]);
-			$coursetopbar[0] = explode(',',$coursetopbar[0]);
-			$coursetopbar[1] = explode(',',$coursetopbar[1]);
-			$coursetoolset = $crow[9];
-			$coursedeftime = $crow[10]%10000;
-			if ($crow[10]>10000) {
-				$coursedefstime = floor($crow[10]/10000);
+			$coursenewflag = $crow['newflag']; //mysql_result($result,0,6);
+			$coursemsgset = $crow['msgset']%5;
+			$coursetoolset = $crow['toolset'];
+			$coursedeftime = $crow['deftime']%10000;
+			if ($crow['deftime']>10000) {
+				$coursedefstime = floor($crow['deftime']/10000);
 			} else {
 				$coursedefstime = $coursedeftime;
 			}
-			$picicons = $crow[11];
-			$latepasshrs = $crow[12];
-			if (!isset($coursetopbar[2])) { $coursetopbar[2] = 0;}
-			if ($coursetopbar[0][0] == null) {unset($coursetopbar[0][0]);}
-			if ($coursetopbar[1][0] == null) {unset($coursetopbar[1][0]);}
-			if (isset($studentid) && $previewshift==-1 && (($crow[1])&1)==1) {
+			$picicons = $crow['picicons'];
+			$latepasshrs = $crow['latepasshrs'];
+			
+			if (isset($studentid) && !$inInstrStuView && (($crow['available'])&1)==1) {
 				echo "This course is not available at this time";
 				exit;
 			}
-			$lockaid = $crow[2]; //ysql_result($result,0,2);
+			$lockaid = $crow['lockaid']; //ysql_result($result,0,2);
 			if (isset($studentid) && $lockaid>0) {
 				if (strpos(basename($_SERVER['PHP_SELF']),'showtest.php')===false) {
 					require("header.php");
@@ -651,14 +646,14 @@
 				}
 			}
 			unset($lockaid);
-			if ($myrights==75 && !isset($teacherid) && !isset($studentid) && $crow[4]==$groupid) {
+			if ($myrights==75 && !isset($teacherid) && !isset($studentid) && $crow['groupid']==$groupid) {
 				//group admin access
 				$teacherid = $userid;
 				$adminasteacher = true;
-			} else if ($myrights>19 && !isset($teacherid) && !isset($studentid) && !isset($tutorid) && $previewshift==-1) {
-				if ($crow[3]==2) {
+			} else if ($myrights>19 && !isset($teacherid) && !isset($studentid) && !isset($tutorid) && !$inInstrStuView) {
+				if ($crow['copyrights']==2) {
 					$guestid = $userid;
-				} else if ($crow[3]==1 && $crow[4]==$groupid) {
+				} else if ($crow['copyrights']==1 && $crow['groupid']==$groupid) {
 					$guestid = $userid;
 				}
 			}

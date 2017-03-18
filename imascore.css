@@ -104,6 +104,9 @@ div.blockitems, div.blockitems div.blockitems div.blockitems {
 div.hidden {
 	display:none;
 }
+.showinmobile {
+	display:none;
+}
 div.icon {
 	float: left;
 	padding-left: 5px;
@@ -230,6 +233,14 @@ div.submit {
 }
 span#leftcontenttoggle {
 	display:none;
+	vertical-align:middle;
+	padding: 0px 5px;
+}
+span#leftcontenttoggle:hover {
+	background-color: #eee;
+}
+span#leftcontenttoggle.leftcontentactive {
+	background-color: #eee;
 }
 
 @media only screen and (max-width: 760px) {
