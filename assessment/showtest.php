@@ -370,9 +370,8 @@
 			if (!isset($coursetheme)) { //should already be set from validate.php
 				$coursetheme = $courseinfo['theme'];
 			}
-			
 			if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
-				$sessiondata['coursetheme'] = $sessiondata['userprefs']['usertheme'];
+				$coursetheme = $sessiondata['userprefs']['usertheme'];
 			}
 			$sessiondata['coursetheme'] = $coursetheme;
 

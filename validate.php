@@ -426,16 +426,37 @@
 	$userfullname = $line['FirstName'] . ' ' . $line['LastName'];
 	$inInstrStuView = false;
 	if (!isset($sessiondata['userprefs']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
-		//userprefs are missing!  They should be defined.
-		//we should never be here
+		//userprefs are missing!  They should be defined from initial session setup
+		//we should never be here. But in case we are, reload prefs
 		$sessiondata['userprefs'] = array();
 		$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
 		$stm->execute(array(':id'=>$userid));
 		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 			$sessiondata['userprefs'][$row[0]] = $row[1];
 		}
-		//TODO: if we hit this, probably should reset the rest of the session variables to
+		//if we hit this, probably should reset the rest of the session variables to
 		//can use to reload session variable after changing
+		$prefdefaults = array(
+			'mathdisp'=>1,
+			'graphdisp'=>1,
+			'drawentry'=>1,
+			'useed'=>1,
+			'livepreview'=>1);
+		foreach($prefdefaults as $key=>$def) {
+			if (isset($sessiondata['userprefs'][$key])) {
+				//keep it
+			} else if (isset($CFG['UP'][$key])) {
+				$sessiondata['userprefs'][$key] = $CFG['UP'][$key];
+			} else {
+				$sessiondata['userprefs'][$key] = $prefdefaults[$key];
+			}
+		}
+		foreach(array('graphdisp','mathdisp','useed') as $key) {
+			if (isset($sessiondata['userprefs'][$key])) {
+				$sessiondata[$key] = $sessiondata['userprefs'][$key];
+			}
+		}
+		writesessiondata();
 	}
 	if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
 		$coursetheme = $sessiondata['userprefs']['usertheme'];
