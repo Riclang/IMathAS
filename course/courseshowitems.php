@@ -2,6 +2,8 @@
 //IMathAS:  show items function for main course page
 //(c) 2007 David Lippman
 
+require_once('../includes/loaditemshowdata.php');
+
 function beginitem($canedit,$aname='') {
 	 if ($aname != '') {
 		 echo "<div class=\"item\" id=\"$aname\">\n";
@@ -156,7 +158,6 @@ function showitems($items,$parent,$inpublic=false) {
 	   }
 
 	   if ($itemshowdata===null) {
-	   	   require_once('../includes/loaditemshowdata.php');
 	   	   $itemshowdata = loadItemShowData($items, true, $viewall, $inpublic, $ispublic);
 	   }
 
@@ -1680,62 +1681,7 @@ function showitems($items,$parent,$inpublic=false) {
 	//return tzdate("M j, Y, g:i a",$date);
    }
 
-   function upsendexceptions(&$items) {
-	   global $exceptions;
-	   $minsdate = 9999999999;
-	   $maxedate = 0;
-	   foreach ($items as $k=>$item) {
-		   if (is_array($item)) {
-			  $hasexc = upsendexceptions($items[$k]['items']);
-			  if ($hasexc!=FALSE) {
-				  if ($hasexc[0]<$items[$k]['startdate']) {
-					  $items[$k]['startdate'] = $hasexc[0];
-				  }
-				  if ($hasexc[1]>$items[$k]['enddate']) {
-					  $items[$k]['enddate'] = $hasexc[1];
-				  }
-				//return ($hasexc);
-				if ($hasexc[0]<$minsdate) { $minsdate = $hasexc[0];}
-				if ($hasexc[1]>$maxedate) { $maxedate = $hasexc[1];}
-			  }
-		   } else {
-			   if (isset($exceptions[$item]) && $exceptions[$item][4]=='A') {
-				  // return ($exceptions[$item]);
-				   if ($exceptions[$item][0]<$minsdate) { $minsdate = $exceptions[$item][0];}
-				   if ($exceptions[$item][1]>$maxedate) { $maxedate = $exceptions[$item][1];}
-			   } else if (isset($exceptions[$item]) && ($exceptions[$item][4]=='F' || $exceptions[$item][4]=='P' || $exceptions[$item][4]=='R')) {
-			   	   //extend due date if replyby or postby bigger than enddate
-			   	   if ($exceptions[$item][0]>$maxedate) { $maxedate = $exceptions[$item][0];}
-			   	   if ($exceptions[$item][1]>$maxedate) { $maxedate = $exceptions[$item][1];}
-			   }
-		   }
-	   }
-	   if ($minsdate<9999999999 || $maxedate>0) {
-		   return (array($minsdate,$maxedate));
-	   } else {
-		   return false;
-	   }
-   }
-   function getpts($scs) {
-	$tot = 0;
-  	foreach(explode(',',$scs) as $sc) {
-		$qtot = 0;
-		if (strpos($sc,'~')===false) {
-			if ($sc>0) {
-				$qtot = $sc;
-			}
-		} else {
-			$sc = explode('~',$sc);
-			foreach ($sc as $s) {
-				if ($s>0) {
-					$qtot+=$s;
-				}
-			}
-		}
-		$tot += round($qtot,1);
-	}
-	return $tot;
-   }
+   
 
    //instructor-only tree-based quick view of full course
    function quickview($items,$parent,$showdates=false,$showlinks=true) {

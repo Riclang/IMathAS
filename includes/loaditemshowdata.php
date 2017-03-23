@@ -2,6 +2,17 @@
 
 //the loadItemShowData function loads item data based on a course itemarray 
 
+/*** 
+* used by loadItemShowData to determine imas_items to pull data for
+*
+*   	$items:  	array from imas_course.itemorder or from subblock
+*	$inpublic:	Are we in a public block?
+*	$viewall:	Is this a teacher/tutor able to see all items?
+*	$tolookup:	Array to store imas_items.id's in
+*	$onlyopen:	Only include items in expanded blocks?
+*	$ispublic:	Are we loading this from public.php? 
+***/
+
 function getitemstolookup($items,$inpublic,$viewall,&$tolookup,$onlyopen,$ispublic) {
 	 global $studentinfo,$openblocks,$firstload;
 	 $now = time();
@@ -35,7 +46,18 @@ function getitemstolookup($items,$inpublic,$viewall,&$tolookup,$onlyopen,$ispubl
 		}
 	}
 }
-	
+
+/*** 
+* Loads data for items
+*
+*	Returns:	array(imas_items.id => associative array of item data)
+*
+*   	$items:  	array from imas_course.itemorder or from subblock
+*	$onlyopen:	Only include items in expanded blocks?
+*	$viewall:	Is this a teacher/tutor able to see all items?
+*	$inpublic:	Are we in a public block?
+*	$ispublic:	Are we loading this from public.php? 
+***/
 function loadItemShowData($items,$onlyopen,$viewall,$inpublic=false,$ispublic=false) {
 	global $DBH;
 	$itemshowdata = array();
@@ -107,5 +129,63 @@ function loadItemShowData($items,$onlyopen,$viewall,$inpublic=false,$ispublic=fa
 	
 	return $itemshowdata;
 } 
+
+function upsendexceptions(&$items) {
+	   global $exceptions;
+	   $minsdate = 9999999999;
+	   $maxedate = 0;
+	   foreach ($items as $k=>$item) {
+		   if (is_array($item)) {
+			  $hasexc = upsendexceptions($items[$k]['items']);
+			  if ($hasexc!=FALSE) {
+				  if ($hasexc[0]<$items[$k]['startdate']) {
+					  $items[$k]['startdate'] = $hasexc[0];
+				  }
+				  if ($hasexc[1]>$items[$k]['enddate']) {
+					  $items[$k]['enddate'] = $hasexc[1];
+				  }
+				//return ($hasexc);
+				if ($hasexc[0]<$minsdate) { $minsdate = $hasexc[0];}
+				if ($hasexc[1]>$maxedate) { $maxedate = $hasexc[1];}
+			  }
+		   } else {
+			   if (isset($exceptions[$item]) && $exceptions[$item][4]=='A') {
+				  // return ($exceptions[$item]);
+				   if ($exceptions[$item][0]<$minsdate) { $minsdate = $exceptions[$item][0];}
+				   if ($exceptions[$item][1]>$maxedate) { $maxedate = $exceptions[$item][1];}
+			   } else if (isset($exceptions[$item]) && ($exceptions[$item][4]=='F' || $exceptions[$item][4]=='P' || $exceptions[$item][4]=='R')) {
+			   	   //extend due date if replyby or postby bigger than enddate
+			   	   if ($exceptions[$item][0]>$maxedate) { $maxedate = $exceptions[$item][0];}
+			   	   if ($exceptions[$item][1]>$maxedate) { $maxedate = $exceptions[$item][1];}
+			   }
+		   }
+	   }
+	   if ($minsdate<9999999999 || $maxedate>0) {
+		   return (array($minsdate,$maxedate));
+	   } else {
+		   return false;
+	   }
+}
+
+function getpts($scs) {
+	$tot = 0;
+  	foreach(explode(',',$scs) as $sc) {
+		$qtot = 0;
+		if (strpos($sc,'~')===false) {
+			if ($sc>0) {
+				$qtot = $sc;
+			}
+		} else {
+			$sc = explode('~',$sc);
+			foreach ($sc as $s) {
+				if ($s>0) {
+					$qtot+=$s;
+				}
+			}
+		}
+		$tot += round($qtot,1);
+	}
+	return $tot;
+}
 
 ?>
