@@ -293,6 +293,9 @@
 		 if (!isset($_POST['tzoffset'])) {
 			 $_POST['tzoffset'] = 0;
 		 }
+		 if (isset($_POST['tzname'])) {
+		 	 $sessiondata['logintzname'] = $_POST['tzname'];
+		 }
 		 $sessiondata['userprefs'] = array();
 		 $prefdefaults = array(
 			'mathdisp'=>1,
