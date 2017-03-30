@@ -416,6 +416,17 @@ ini_set("post_max_size", "10485760");
 			}
 			exit;
 		}
+	} else if ($_GET['action']=="checkusername") {
+		require_once("config.php");
+		
+		$stm = $DBH->prepare("SELECT id FROM imas_users WHERE SID=:SID");
+		$stm->execute(array(':SID'=>$_GET['SID']));
+		if ($stm->rowCount()>0) {
+			echo "false";
+		} else {
+			echo "true";
+		}
+		exit;
 	}
 
 	require("validate.php");
@@ -799,7 +810,7 @@ ini_set("post_max_size", "10485760");
 			$stm = $DBH->prepare("UPDATE imas_users SET remoteaccess='' WHERE id = :uid");
 			$stm->execute(array(':uid'=>$userid));
 		}
-	}
+	} 
 	if ($isgb) {
 		echo '<html><body>Changes Recorded.  <input type="button" onclick="top.GB_hide()" value="Done" /></body></html>';
 	} else {

@@ -394,7 +394,8 @@ if (isset($_GET['getsid'])) {
 	echo '
 				SID: {
 					required: {depends: function(element) {return logintype==1}},
-					pattern: '.$loginformat.'
+					pattern: '.$loginformat.',
+					remote: imasroot+"/actions.php?action=checkusername"
 				},
 				pw1: { 
 					required: {depends: function(element) {return logintype==1}},
@@ -420,6 +421,11 @@ if (isset($_GET['getsid'])) {
 					email: true
 				}
 				
+			},
+			messages: {
+				SID: {
+					remote: _("That username is already taken. Try another.")
+				}
 			},
 			invalidHandler: function() {
 				setTimeout(function(){$("#pageform").removeClass("submitted").removeClass("submitted2");}, 100)}

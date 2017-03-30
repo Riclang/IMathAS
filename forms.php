@@ -49,7 +49,8 @@ switch($_GET['action']) {
 			rules: {
 				SID: {
 					required: true,
-					pattern: '.$loginformat.'
+					pattern: '.$loginformat.',
+					remote: imasroot+"/actions.php?action=checkusername"
 				},
 				pw1: { required: true, minlength: 6},
 				pw2: {
@@ -63,6 +64,11 @@ switch($_GET['action']) {
 					email: true
 				},
 				agree: { required: true}
+			},
+			messages: {
+				SID: {
+					remote: _("That username is already taken. Try another.")
+				}
 			},
 			invalidHandler: function() {
 				setTimeout(function(){$("#newuserform").removeClass("submitted").removeClass("submitted2");}, 100)}
