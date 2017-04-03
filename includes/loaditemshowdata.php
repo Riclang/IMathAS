@@ -37,7 +37,7 @@ function getitemstolookup($items,$inpublic,$viewall,&$tolookup,$onlyopen,$ispubl
 						if (in_array($item['id'],$openblocks)) { $isopen=true;} else {$isopen=false;}
 						if ($firstload && (strlen($item['SH'])==1 || $item['SH'][1]=='O')) {$isopen=true;}
 					}
-					if ((!$onlyopen || $isopen) && $item['SH'][1]!='T' && $item['SH'][1]!='F') {
+					if ((!$onlyopen && $item['SH'][1]!='T') || ($onlyopen && $isopen && $item['SH'][1]!='T' && $item['SH'][1]!='F')) {
 						getitemstolookup($item['items'],$inpublic||$turnonpublic,$viewall,$tolookup,$onlyopen,$ispublic);
 					}
 			 }
@@ -129,6 +129,24 @@ function loadItemShowData($items,$onlyopen,$viewall,$inpublic=false,$ispublic=fa
 	
 	return $itemshowdata;
 } 
+
+function loadExceptions($cid, $userid) {
+	global $DBH;
+	
+	$exceptions = array();
+	$query = "SELECT items.id,ex.startdate,ex.enddate,ex.islatepass,ex.waivereqscore,ex.itemtype FROM ";
+	$query .= "imas_exceptions AS ex,imas_items as items,imas_assessments as i_a WHERE ex.userid=:userid AND ";
+	$query .= "ex.assessmentid=i_a.id AND (items.typeid=i_a.id AND items.itemtype='Assessment' AND items.courseid=:courseid) ";
+	$query .= "UNION SELECT items.id,ex.startdate,ex.enddate,ex.islatepass,ex.waivereqscore,ex.itemtype FROM ";
+	$query .= "imas_exceptions AS ex,imas_items as items,imas_forums as i_f WHERE ex.userid=:userid2 AND ";
+	$query .= "ex.assessmentid=i_f.id AND (items.typeid=i_f.id AND items.itemtype='Forum' AND items.courseid=:courseid2) ";
+	$stm = $DBH->prepare($query);
+	$stm->execute(array(':userid'=>$userid, ':courseid'=>$cid, ':userid2'=>$userid, ':courseid2'=>$cid));
+	while ($line = $stm->fetch(PDO::FETCH_ASSOC)) {
+		$exceptions[$line['id']] = array($line['startdate'],$line['enddate'],$line['islatepass'],$line['waivereqscore'],$line['itemtype']);
+	}
+	return $exceptions;
+}
 
 function upsendexceptions(&$items) {
 	   global $exceptions;

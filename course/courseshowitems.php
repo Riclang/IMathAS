@@ -283,6 +283,7 @@ function showitems($items,$parent,$inpublic=false) {
 					} else {
 						$astyle = '';
 					}
+					echo ' id="B'.$items[$i]['id'].'"';
 					echo ">";
 					echo '<div class="itemhdr">';
 					
@@ -465,6 +466,7 @@ function showitems($items,$parent,$inpublic=false) {
 					} else {
 						$astyle = '';
 					}
+					echo ' id="B'.$items[$i]['id'].'"';
 					echo ">";
 					echo '<div class="itemhdr">';
 					
