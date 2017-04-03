@@ -504,7 +504,8 @@ if ($overwriteBody==1) {
 	                <a href="coursereports.php?cid=<?php echo $cid ?>">Reports</a><br/>
 			<a href="managestugrps.php?cid=<?php echo $cid ?>"><?php echo _('Groups'); ?></a><br/>
 			<a href="addoutcomes.php?cid=<?php echo $cid ?>"><?php echo _('Outcomes'); ?></a><br/>
-			<a href="showcalendar.php?cid=<?php echo $cid ?>"><?php echo _('Calendar'); ?></a>
+			<a href="showcalendar.php?cid=<?php echo $cid ?>"><?php echo _('Calendar'); ?></a><br/>
+			<a href="coursemap.php?cid=<?php echo $cid ?>"><?php echo _('Course Map'); ?></a>
 		</p>
 	<?php
 	}
@@ -562,21 +563,22 @@ if ($overwriteBody==1) {
 		  </p>
 <?php
 		}
-		if ($msgset<4 || ($toolset&2)==0 || ($toolset&1)==0) {
-			echo '<p>';
-			if ($msgset<4) {
-				echo '<a href="'.$imasroot.'/msgs/msglist.php?cid='.$cid.'&amp;folder='.$_GET['folder'].'" class="essen"> ';
-				echo _('Messages').'</a> '.$newmsgs .' <br/>';
-			}
-			if (($toolset&2)==0) {
-				echo '<a href="'.$imasroot.'/forums/forums.php?cid='.$cid.'&amp;folder='.$_GET['folder'].'" class="essen">';
-				echo _('Forums').'</a> '.$newpostscnt.'<br/>';
-			}
-			if (($toolset&1)==0) {
-				echo '<a href="showcalendar.php?cid='.$cid.'" class="essen">'._('Calendar').'</a>';
-			}
-			echo '</p>';
+		
+		echo '<p>';
+		if ($msgset<4) {
+			echo '<a href="'.$imasroot.'/msgs/msglist.php?cid='.$cid.'&amp;folder='.$_GET['folder'].'" class="essen"> ';
+			echo _('Messages').'</a> '.$newmsgs .' <br/>';
 		}
+		if (($toolset&2)==0) {
+			echo '<a href="'.$imasroot.'/forums/forums.php?cid='.$cid.'&amp;folder='.$_GET['folder'].'" class="essen">';
+			echo _('Forums').'</a> '.$newpostscnt.'<br/>';
+		}
+		if (($toolset&1)==0) {
+			echo '<a href="showcalendar.php?cid='.$cid.'" class="essen">'._('Calendar').'</a><br/>';
+		}
+		echo '<a href="coursemap.php?cid='.$cid.'">'._('Course Map').'</a>';
+		echo '</p>';
+		
 	?>
 
 			<p>
