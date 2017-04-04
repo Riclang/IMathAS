@@ -1132,7 +1132,7 @@ if (!isset($_REQUEST['embedpostback'])) {
 			echo '<span class="floatright hideinmobile">';
 			if ($userfullname != ' ') {
 				echo "<a href=\"#\" onclick=\"GB_show('"._('User Preferences')."','$imasroot/admin/ltiuserprefs.php?cid=$cid&greybox=true',800,'auto');return false;\" title=\""._('User Preferences')."\" aria-label=\""._('Edit User Preferences')."\">";
-				echo "<span id=\"myname\">$userfullname</span>";
+				echo "<span id=\"myname\">$userfullname</span> ";
 				echo "<img style=\"vertical-align:top\" src=\"$imasroot/img/gears.png\" alt=\"\"/></a>";
 			} else {
 				echo "<a href=\"#\" onclick=\"GB_show('"._('User Preferences')."','$imasroot/admin/ltiuserprefs.php?cid=$cid&greybox=true',800,'auto');return false;\">";
@@ -1151,7 +1151,7 @@ if (!isset($_REQUEST['embedpostback'])) {
 		echo '<div class="floatright">';
 		if ($userfullname != ' ') {
 			echo "<p><a href=\"#\" onclick=\"GB_show('"._('User Preferences')."','$imasroot/admin/ltiuserprefs.php?cid=$cid&greybox=true',800,'auto');return false;\" title=\""._('User Preferences')."\" aria-label=\""._('Edit User Preferences')."\">";
-			echo "<span id=\"myname\">$userfullname</span>";
+			echo "<span id=\"myname\">$userfullname</span> ";
 			echo "<img style=\"vertical-align:top\" src=\"$imasroot/img/gears.png\" alt=\"\"/></a></p>";
 		} else {
 			echo "<p><a href=\"#\" onclick=\"GB_show('"._('User Preferences')."','$imasroot/admin/ltiuserprefs.php?cid=$cid&greybox=true',800,'auto');return false;\">";
