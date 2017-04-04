@@ -49,7 +49,7 @@ function showicon($type,$alt='') {
 }
 					
 function showitemtree($items,$parent) {
-	 global $CFG, $itemshowdata, $typelookups, $imasroot, $cid, $userid, $exceptions, $viewedassess, $havecalcedviewedassess, $now, $viewall;
+	 global $DBH, $CFG, $itemshowdata, $typelookups, $imasroot, $cid, $userid, $exceptions, $viewedassess, $havecalcedviewedassess, $now, $viewall, $studentinfo;
 	 
 	 foreach ($items as $k=>$item) {
 		if (is_array($item)) {
