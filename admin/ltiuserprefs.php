@@ -19,7 +19,7 @@ if (isset($_POST['mathdisp'])) {
 	storeUserPrefs();
 	echo '<p>'._('Preferences saved. Your new preferences will go into effect when you visit a new page or load the current page.').'</p>';
 	if ($greybox) {
-		echo '<input type="button" onclick="top.GB_hide()" value="'._('Done').'" />';
+		echo '<input type="button" onclick="parent.GB_hide()" value="'._('Done').'" />';
 	}
 } else {
 	echo '<div id="headerforms" class="pagetitle"><h2>'._('User Preferences').'</h2></div>';
