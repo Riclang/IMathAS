@@ -98,9 +98,10 @@
 
 		 $sessiondata['useragent'] = $_SERVER['HTTP_USER_AGENT'];
 		 $sessiondata['ip'] = $_SERVER['REMOTE_ADDR'];
-		 $sessiondata['mathdisp'] = $_POST['mathdisp'];
-		 $sessiondata['graphdisp'] = $_POST['graphdisp'];
-		 $sessiondata['useed'] = checkeditorok();
+		 
+		 require_once("$curdir/includes/userprefs.php");
+		 generateuserprefs();
+		
 		 $sessiondata['secsalt'] = generaterandstring();
 		 if (isset($_POST['savesettings'])) {
 			 setcookie('mathgraphprefs',$_POST['mathdisp'].'-'.$_POST['graphdisp'],2000000000);
@@ -247,96 +248,25 @@
 			exit;
 		 }
 
-		 //$sessiondata['mathdisp'] = $_POST['mathdisp'];
-		 //$sessiondata['graphdisp'] = $_POST['graphdisp'];
-		 //$sessiondata['useed'] = $_POST['useed'];
 		 $sessiondata['useragent'] = $_SERVER['HTTP_USER_AGENT'];
 		 $sessiondata['ip'] = $_SERVER['REMOTE_ADDR'];
 		 $sessiondata['secsalt'] = generaterandstring();
-		 if ($_POST['access']==1) { //text-based
-			 $sessiondata['mathdisp'] = $_POST['mathdisp']; //to allow for accessibility
-			 $sessiondata['graphdisp'] = 0;
-			 $sessiondata['useed'] = 0;
-		 } else if ($_POST['access']==2) { //img graphs
-		 	 //deprecated
-			 $sessiondata['mathdisp'] = 2-$_POST['mathdisp'];
-			 $sessiondata['graphdisp'] = 2;
-			 $sessiondata['useed'] = checkeditorok();
-		 } else if ($_POST['access']==4) { //img math
-		 	 //deprecated
-			 $sessiondata['mathdisp'] = 2;
-			 $sessiondata['graphdisp'] = $_POST['graphdisp'];
-			 $sessiondata['useed'] = checkeditorok();
-		 } else if ($_POST['access']==3) { //img all
-			 $sessiondata['mathdisp'] = 2;
-			 $sessiondata['graphdisp'] = 2;
-			 $sessiondata['useed'] = checkeditorok();
-		 } else if ($_POST['access']==5) { //mathjax experimental
-		 	 //deprecated, as mathjax is now default
-		 	 $sessiondata['mathdisp'] = 1;
-			 $sessiondata['graphdisp'] = $_POST['graphdisp'];
-			 $sessiondata['useed'] = checkeditorok();
-		 } else if ($_POST['access']==6) { //katex experimental
-		 	 $sessiondata['mathdisp'] = 6;
-			 $sessiondata['graphdisp'] = $_POST['graphdisp'];
-			 $sessiondata['useed'] = checkeditorok();
-		 } else if (!empty($_POST['isok'])) {
-			 $sessiondata['mathdisp'] = 1;
-			 $sessiondata['graphdisp'] = 1;
-			 $sessiondata['useed'] = checkeditorok();
-		 } else {
-		 	 $sessiondata['mathdisp'] = 2-$_POST['mathdisp'];
-		 	 $sessiondata['graphdisp'] = $_POST['graphdisp'];
-		 	 $sessiondata['useed'] = checkeditorok();
-		 }
-
+		 
 		 if (!isset($_POST['tzoffset'])) {
 			 $_POST['tzoffset'] = 0;
 		 }
 		 if (isset($_POST['tzname'])) {
 		 	 $sessiondata['logintzname'] = $_POST['tzname'];
 		 }
-		 $sessiondata['userprefs'] = array();
-		 $prefdefaults = array(
-			'mathdisp'=>1,
-			'graphdisp'=>1,
-			'drawentry'=>1,
-			'useed'=>1,
-			'livepreview'=>1);
-		 if (strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
-			$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
-			$stm->execute(array(':id'=>$userid));
-			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-				$sessiondata['userprefs'][$row[0]] = $row[1];
-			}
-			if (isset($sessiondata['userprefs']['tzname'])) {
-				$_POST['tzname'] = $sessiondata['userprefs']['tzname'];
-			}
-			foreach($prefdefaults as $key=>$def) {
-				if (isset($sessiondata['userprefs'][$key])) {
-					//keep it
-				} else if (isset($CFG['UP'][$key])) {
-					$sessiondata['userprefs'][$key] = $CFG['UP'][$key];
-				} else {
-					$sessiondata['userprefs'][$key] = $prefdefaults[$key];
-				}
-			}
-			foreach(array('graphdisp','mathdisp','useed') as $key) {
-				if (isset($sessiondata['userprefs'][$key])) {
-					$sessiondata[$key] = $sessiondata['userprefs'][$key];
-				}
-			}
-		 }
+		 require_once("$curdir/includes/userprefs.php");
+		 generateuserprefs();
+		 
 		 $enc = base64_encode(serialize($sessiondata));
 
 		 if (isset($_POST['tzname']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
-		 	 //DB $query = "INSERT INTO imas_sessions (sessionid,userid,time,tzoffset,tzname,sessiondata) VALUES ('$sessionid','$userid',$now,'{$_POST['tzoffset']}','{$_POST['tzname']}','$enc')";
-       //DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 		 	 $stm = $DBH->prepare("INSERT INTO imas_sessions (sessionid,userid,time,tzoffset,tzname,sessiondata) VALUES (:sessionid, :userid, :time, :tzoffset, :tzname, :sessiondata)");
 		 	 $stm->execute(array(':sessionid'=>$sessionid, ':userid'=>$userid, ':time'=>$now, ':tzoffset'=>$_POST['tzoffset'], ':tzname'=>$_POST['tzname'], ':sessiondata'=>$enc));
 		 } else {
-		 	 //DB $query = "INSERT INTO imas_sessions (sessionid,userid,time,tzoffset,sessiondata) VALUES ('$sessionid','$userid',$now,'{$_POST['tzoffset']}','$enc')";
-       //DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 		 	 $stm = $DBH->prepare("INSERT INTO imas_sessions (sessionid,userid,time,tzoffset,sessiondata) VALUES (:sessionid, :userid, :time, :tzoffset, :sessiondata)");
 		 	 $stm->execute(array(':sessionid'=>$sessionid, ':userid'=>$userid, ':time'=>$now, ':tzoffset'=>$_POST['tzoffset'], ':sessiondata'=>$enc));
 		 }
@@ -344,13 +274,9 @@
 
 		 if (isset($CFG['GEN']['newpasswords']) && strlen($line['password'])==32) { //old password - rehash it
 		 	 $hashpw = password_hash($_POST['password'], PASSWORD_DEFAULT);
-		 	 //DB $query = "UPDATE imas_users SET lastaccess=$now,password='$hashpw' WHERE id=$userid";
-       //DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 		 	 $stm = $DBH->prepare("UPDATE imas_users SET lastaccess=:lastaccess,password=:password WHERE id=:id");
 		 	 $stm->execute(array(':lastaccess'=>$now, ':password'=>$hashpw, ':id'=>$userid));
 		 } else {
-		 	 //DB $query = "UPDATE imas_users SET lastaccess=$now WHERE id=$userid";
-       //DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
 		 	 $stm = $DBH->prepare("UPDATE imas_users SET lastaccess=:lastaccess WHERE id=:id");
 		 	 $stm->execute(array(':lastaccess'=>$now, ':id'=>$userid));
 		 }
@@ -431,35 +357,8 @@
 	if (!isset($sessiondata['userprefs']) && strpos(basename($_SERVER['PHP_SELF']),'upgrade.php')===false) {
 		//userprefs are missing!  They should be defined from initial session setup
 		//we should never be here. But in case we are, reload prefs
-		$sessiondata['userprefs'] = array();
-		$stm = $DBH->prepare("SELECT item,value FROM imas_user_prefs WHERE userid=:id");
-		$stm->execute(array(':id'=>$userid));
-		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-			$sessiondata['userprefs'][$row[0]] = $row[1];
-		}
-		//if we hit this, probably should reset the rest of the session variables to
-		//can use to reload session variable after changing
-		$prefdefaults = array(
-			'mathdisp'=>1,
-			'graphdisp'=>1,
-			'drawentry'=>1,
-			'useed'=>1,
-			'livepreview'=>1);
-		foreach($prefdefaults as $key=>$def) {
-			if (isset($sessiondata['userprefs'][$key])) {
-				//keep it
-			} else if (isset($CFG['UP'][$key])) {
-				$sessiondata['userprefs'][$key] = $CFG['UP'][$key];
-			} else {
-				$sessiondata['userprefs'][$key] = $prefdefaults[$key];
-			}
-		}
-		foreach(array('graphdisp','mathdisp','useed') as $key) {
-			if (isset($sessiondata['userprefs'][$key])) {
-				$sessiondata[$key] = $sessiondata['userprefs'][$key];
-			}
-		}
-		writesessiondata();
+		require_once("$curdir/includes/userprefs.php");
+		generateuserprefs(true);
 	}
 	if (isset($sessiondata['userprefs']['usertheme']) && strcmp($sessiondata['userprefs']['usertheme'],'0')!=0) {
 		$coursetheme = $sessiondata['userprefs']['usertheme'];
