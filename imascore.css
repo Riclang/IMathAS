@@ -54,6 +54,9 @@ label.error {
 	float: left;
 	margin-left: 10px;
 }
+input[type=checkbox] + label.error {
+	float:none;
+}
 div.title {
 	/*display: inline;*/
 	margin-left: 30px;
