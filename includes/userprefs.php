@@ -55,9 +55,9 @@ function showUserPrefsForm() {
 		'graphdisp'=>_('Graph Display'),
 		'drawentry'=>_('Drawing Entry'),
 		'useed'=>_('Text Editor'),
-		'tztype'=>_('Time Zone'),
 		'usertheme'=>_('Course styling and contrast'),
-		'livepreview'=>_('Live preview'));
+		'livepreview'=>_('Live preview'),
+		'tztype'=>_('Time Zone'));
 	
 	foreach($prefdefaults as $k=>$v) {
 		if (isset($CFG['UP'][$k])) {
