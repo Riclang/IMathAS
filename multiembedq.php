@@ -36,6 +36,7 @@ $sessiondata['mathdisp'] = 3;
 $showtips = 2;
 $useeqnhelper = 4;
 $useeditor = 1;
+$sessiondata['secsalt'] = "12345";
 $cid = "embedq";
 
 if (isset($CFG['GEN']['JWTsecret'])) {
@@ -172,9 +173,9 @@ echo '<input type="hidden" id="disptime" value="'.time().'"/>';
 echo '<input type="hidden" id="isreview" value="0"/>';
 echo '<p><a href="multiembedq.php?id='.$_GET['id'].'&amp;regen=1&amp;sameseed='.$sameseed.'&amp;theme='.$theme.'&amp;iframe_resize_id='.$targetid.'">';
 if (count($qids)>1) {
-	echo _('Try Another Version of These Questions</a></p>');
+	echo _('Try Another Version of These Questions').'</a></p>';
 } else {
-	echo _('Try Another Version of This Question</a></p>');
+	echo _('Try Another Version of This Question').'</a></p>';
 }
 $showhints = true;
 

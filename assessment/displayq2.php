@@ -670,6 +670,8 @@ function scoreq($qnidx,$qidx,$seed,$givenans,$attemptn=0,$qnpointval=1) {
 				} else if (substr($_POST["qn$partnum"],0,2)=='[(') { //calcmatrix
 					$stuav = str_replace(array('(',')','[',']'),'',$_POST["qn$partnum"]);
 					$stuanswersval[$thisq][$kidx] = str_replace(',','|',$stuav);
+				} else {
+					$stuanswersval[$thisq][$kidx] = $_POST["qn$partnum"];
 				}
 			} else if (isset($_POST["qn$partnum"])) {
 				if (isset($_POST["qn$partnum-0"])) { //calcmatrix with matrixsize
@@ -725,6 +727,8 @@ function scoreq($qnidx,$qidx,$seed,$givenans,$attemptn=0,$qnpointval=1) {
 			} else if (substr($_POST["qn$qnidx"],0,2)=='[(') { //calcmatrix
 				$stuav = str_replace(array('(',')','[',']'),'',$_POST["qn$qnidx"]);
 				$stuanswersval[$thisq] = str_replace(',','|',$stuav);
+			} else {
+				$stuanswersval[$thisq] = $_POST["qn$qnidx"];
 			}
 		} else if (isset($_POST["qn$qnidx"])) {
 			if (isset($_POST["qn$qnidx-0"])) { //calcmatrix with matrixsize
@@ -830,9 +834,6 @@ function scoreq($qnidx,$qidx,$seed,$givenans,$attemptn=0,$qnpointval=1) {
 
 	$score = 0;
 	if ($qdata['qtype']=="multipart") {
-		if (in_array('essay',$anstypes) || in_array('file',$anstypes)) {
-			$GLOBALS['questionmanualgrade'] = true;
-		}
 		$partla = array();
 		if (isset($answeights)) {
 			if (!is_array($answeights)) {
@@ -894,9 +895,6 @@ function scoreq($qnidx,$qidx,$seed,$givenans,$attemptn=0,$qnpointval=1) {
 			return array(implode('~',$scores),implode('~',$raw));
 		}
 	} else {
-		if ($qdata['qtype']=='essay' || $qdata['qtype']=='file') {
-			$GLOBALS['questionmanualgrade'] = true;
-		}
 		$score = scorepart($qdata['qtype'],$qnidx,$givenans,$options,0);
 		if (isset($scoremethod) && $scoremethod == "allornothing") {
 			if ($score<.98) {$score=0;}
@@ -2037,7 +2035,7 @@ function makeanswerbox($anstype, $qn, $la, $options,$multi,$colorbox='') {
 			$preview .= "<input type=button class=btn id=\"pbtn$qn\" value=\"" . _('Preview') . "\" onclick=\"complexcalc('tc$qn','p$qn','$answerformat')\" /> &nbsp;\n";
 		}
 		$preview .= "<span id=p$qn></span> ";
-		$out .= "<script type=\"text/javascript\">complextoproc[$qn] = 1;</script>\n";
+		$out .= "<script type=\"text/javascript\">complextoproc[$qn] = 1; calcformat[$qn] = '$answerformat';</script>\n";
 
 		if (in_array('nosoln',$ansformats) || in_array('nosolninf',$ansformats)) {
 			list($out,$answer) = setupnosolninf($qn, $out, $answer, $ansformats, $la, $ansprompt, $colorbox);
@@ -2219,7 +2217,7 @@ function makeanswerbox($anstype, $qn, $la, $options,$multi,$colorbox='') {
 				$out .= '<img class="scoreicon" src="'.$imasroot.'/img/q_emptybox.gif" alt="Set score no credit" ';
 				$out .= "onclick=\"quicksetscore('$el',0)\" /></span>";
 
-				$la = preg_replace_callback('/<a[^>]*href="(.*)?"[^>]*>(.*?)<\/a>/', function ($m) {
+				$la = preg_replace_callback('/<a[^>]*href="(.*?)"[^>]*>(.*?)<\/a>/', function ($m) {
 					global $gradededessayexpandocnt;
 					if (!isset($gradededessayexpandocnt)) {
 						$gradededessayexpandocnt = 0;
@@ -2239,6 +2237,7 @@ function makeanswerbox($anstype, $qn, $la, $options,$multi,$colorbox='') {
 						$ret .= " <span aria-expanded=\"false\" aria-controls=\"essayfileprev$gradededessayexpandocnt\" class=\"clickable\" id=\"essaytog$gradededessayexpandocnt\" onclick=\"toggleinlinebtn('essayfileprev$gradededessayexpandocnt','essaytog$gradededessayexpandocnt');\">[+]</span>";
 						$ret .= " <br/><iframe id=\"essayfileprev$gradededessayexpandocnt\" style=\"display:none;\" aria-hidden=\"true\" src=\"https://docs.google.com/viewer?url=".urlencode($url)."&embedded=true\" width=\"80%\" height=\"600px\"></iframe>";
 					}
+					$gradededessayexpandocnt++;
 					return $ret;
 				   }, $la);
 			}
@@ -4592,6 +4591,7 @@ function scorepart($anstype,$qn,$givenans,$options,$multi) {
 		} else if (trim($givenans)=='') {
 			return 0;
 		} else {
+			$GLOBALS['questionmanualgrade'] = true;
 			return -2;
 		}
 	} else if ($anstype == 'interval' || $anstype == 'calcinterval') {
@@ -6428,6 +6428,7 @@ function scorepart($anstype,$qn,$givenans,$options,$multi) {
 				}
 				return $pts/count($answer);
 			} else {
+				$GLOBALS['questionmanualgrade'] = true;
 				return -2;
 			}
 		}
