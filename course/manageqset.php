@@ -610,12 +610,6 @@ if ($myrights<20) {
 				$body = "No questions selected.  <a href=\"manageqset.php?cid=$cid\">Go back</a>\n";
 			}
 		}
-	} else if (isset($_GET['remove'])) {
-		//postback handled by $_POST['remove'] block
-		$pagetitle = "Confirm Delete";
-		$curBreadcrumb .= " &gt; <a href=\"manageqset.php?cid=$cid\">Manage Question Set </a>";
-		$curBreadcrumb .= " &gt; Confirm Delete";
-		
 	} else if (isset($_GET['transfer'])) {
 		
 		//postback handled by $_POST['transfer'] block
