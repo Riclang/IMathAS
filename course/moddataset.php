@@ -472,14 +472,6 @@
 			}
 		}
 		
-		if (count($newlibs)==0 && $allcurrentlibs[0]!=0 && count($haverightslibs)==count($allcurrentlibs)) {
-			//if we have no selected libs, 
-			// and not currently unassigned
-			// and we have rights to remove all current items
-			// then undelete or add Unassigned
-			$newlibs[] = 0;
-		}
-		
 		//remove any that we have the rights to but are not in newlibs
 		$toremove = array_values(array_diff($haverightslibs,$newlibs));
 		//undelete any libs that are new and in deleted libs
@@ -487,6 +479,16 @@
 		//add any new librarys that are not current and aren't being undeleted
 		$toadd = array_values(array_diff($newlibs,$allcurrentlibs,$toundelete));
 		
+		//no selected libs, we're removing all current libs (or none of either)
+		// nothing to undelete, nothing to add.  
+		// Create unassigned
+		if (count($newlibs)==0 && count($toremove)==count($allcurrentlibs) && count($toundelete)==0 && count($toadd)==0) {
+			if (in_array(0, $alldeletedlibs)) {  //have unassigned to undelete
+				$toundelete[] = 0;
+			} else { //create new unassigned
+				$toadd[] = 0;
+			}
+		}
 
 		$now = time();
 		if (count($toundelete)>0) {

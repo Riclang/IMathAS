@@ -207,7 +207,7 @@ if ($myrights<20) {
 				//pull a list of all non-deleted library items for these questions
 				$alllibs = array();
 				$dellibs = array();
-				$stm = $DBH->query("SELECT qsetid,libid,deleted FROM imas_library_items WHERE qsetid IN ($chglist)");
+				$stm = $DBH->query("SELECT qsetid,libid,deleted FROM imas_library_items WHERE qsetid IN ($chglist) AND libid>0");
 				while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 					if ($row[2]==0) {
 						$alllibs[$row[0]][] = $row[1];
@@ -258,13 +258,14 @@ if ($myrights<20) {
 							$toadd = $newlibs;
 						}
 						if (isset($dellibs[$qsetid])) {
-							$toundel = array_values(array_intersect($toadd,$dellibs[$qsetid]));
+							$toundel = array_values(array_intersect($newlibs,$dellibs[$qsetid]));
 						} else {
 							$toundel = array();
 						}
-						$toaddnew = array_values(array_diff($toadd,$toundel));
+						$toaddnew = array_values(array_diff($toadd, $toundel));
 						
-						//and add them
+						$alladded = array_merge($toaddnew,$toundel);				
+						
 						foreach ($toundel as $libid) {
 							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
 							$undel_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
@@ -274,7 +275,7 @@ if ($myrights<20) {
 							$ins_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 						}
 						//delete unassigned library item
-						if (count($toadd)>1 || (count($toadd)>0 && $toadd[0]!=0)) {
+						if (count($alladded)>1 || (count($alladded)>0 && $alladded[0]!=0)) {
 							$del_stm->execute(array(':qsetid'=>$qsetid, ':now'=>$now));
 						}
 					}
@@ -289,7 +290,7 @@ if ($myrights<20) {
 					$undel_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now,ownerid=:ownerid WHERE qsetid=:qsetid AND libid=:libid");
 					$del_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:now WHERE libid=:libid AND qsetid=:qsetid");
 					$sel_stm = $DBH->prepare("SELECT id,deleted FROM imas_library_items WHERE qsetid=:qsetid AND (deleted=0 OR (libid=0 AND deleted=1)) ORDER BY deleted");
-					$unassn_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now WHERE libid=0 AND qsetid=:qsetid");
+					$unassn_undel_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now WHERE libid=0 AND qsetid=:qsetid");
 					
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which checked libraries it's not already in
@@ -310,11 +311,11 @@ if ($myrights<20) {
 						
 						//and add them
 						foreach ($toundel as $libid) {
-							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
+							if ($libid==0) { continue;} //we'll handle unassigned later
 							$undel_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 						}
 						foreach($toaddnew as $libid) {
-							if ($libid==0) { continue;} //no need to add to unassigned using "keep existing"
+							if ($libid==0) { continue;} //we'll handle unassigned later
 							$ins_stm->execute(array(':libid'=>$libid, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 						}
 						//determine which libraries to remove from; my lib assignments - newlibs
@@ -330,8 +331,8 @@ if ($myrights<20) {
 								if ($sel_stm->rowCount()==0) { //no library items exist - add unassigned
 									$ins_stm->execute(array(':libid'=>0, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 								} else { //we have active lib item or deleted unassigned
-									if ($sel_stm->fetchColumn(1)==1) { //has no active lib items, so must have unassigned to undeleted
-										$unassn_stm->execute(array(':qsetid'=>$qsetid, ':now'=>$now));
+									if ($sel_stm->fetchColumn(1)==1) { //has no active lib items, so must have unassigned to undelete
+										$unassn_undel_stm->execute(array(':qsetid'=>$qsetid, ':now'=>$now));
 									}
 								}
 							}
@@ -345,7 +346,7 @@ if ($myrights<20) {
 					$del_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:now WHERE libid=:libid AND qsetid=:qsetid");
 					$ins_stm = $DBH->prepare("INSERT INTO imas_library_items (libid,qsetid,ownerid,lastmoddate) VALUES (:libid, :qsetid, :ownerid, :now)");
 					$sel_stm = $DBH->prepare("SELECT id,deleted FROM imas_library_items WHERE qsetid=:qsetid AND (deleted=0 OR (libid=0 AND deleted=1)) ORDER BY deleted");
-					$unassn_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now WHERE libid=0 AND qsetid=:qsetid");
+					$unassn_undel_stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=:now WHERE libid=0 AND qsetid=:qsetid");
 
 					foreach ($libarray as $qsetid) { //for each question
 						//determine which libraries to remove from; my lib assignments - newlibs
@@ -361,7 +362,7 @@ if ($myrights<20) {
 									$ins_stm->execute(array(':libid'=>0, ':qsetid'=>$qsetid, ':ownerid'=>$userid, ':now'=>$now));
 								} else { //we have active lib item or deleted unassigned
 									if ($sel_stm->fetchColumn(1)==1) { //has no active lib items, so must have unassigned to undeleted
-										$unassn_stm->execute(array(':qsetid'=>$qsetid, ':now'=>$now));
+										$unassn_undel_stm->execute(array(':qsetid'=>$qsetid, ':now'=>$now));
 									}
 								}
 							}
