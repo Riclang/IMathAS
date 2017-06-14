@@ -51,7 +51,6 @@ if ($myrights<20) {
 		if (isset($_GET['confirmed'])) {
 			if ($_POST['remove']!='') {
 				$remlist = implode(',' , array_map('intval', explode(',',$_POST['remove'])));
-				echo "ok: $remlist";
 				if (!$isadmin) {
 					if ($isgrpadmin) {
 						$stm = $DBH->prepare("SELECT id FROM imas_libraries WHERE id IN ($remlist) AND groupid=:groupid");
@@ -66,7 +65,7 @@ if ($myrights<20) {
 					}
 					$remlist = implode(',', $oklib);
 				}
-
+				$DBH->beginTransaction();
 				// $remlist now only contains libraries that are OK to delete
 				//now actually delete the libraries
 				$now = time();
@@ -96,10 +95,10 @@ if ($myrights<20) {
 						$okqids[] = $row[0];
 					}
 					//get a list of questions with no more library items
-					$qidstofix = array_diff($qidstocheck,$okqids);
+					$qidstofix = array_values(array_diff($qidstocheck,$okqids));
 					$qlist = array_map('Sanitize::onlyInt', $qidstofix);//INTs from DB
-					if (count($qidstofix)>0) {
-						$qlist_query_placeholders = Sanitize::generateQueryPlaceholders($qlist);
+					$qlist_query_placeholders = Sanitize::generateQueryPlaceholders($qlist);
+					if ($_POST['delq']=='yes' && count($qidstofix)>0) {
 						//$query = "DELETE FROM imas_questionset WHERE id IN ($qlist)";
 						//DB $query = "UPDATE imas_questionset SET deleted=1 WHERE id IN ($qlist)";
 						//DB mysql_query($query) or die("Query failed : " . mysql_error());
@@ -109,7 +108,7 @@ if ($myrights<20) {
 							/*foreach ($qidstofix as $qid) {
 								delqimgs($qid);
 							}*/
-					} else {
+					} else if (count($qidstofix)>0) {
 						//see which questions with no active lib items already have an unassigned lib item we can undeleted 
 						$stm = $DBH->prepare("SELECT DISTINCT qsetid FROM `imas_library_items` WHERE qsetid IN ($qlist_query_placeholders) AND libid=0 AND deleted=1");
 						$stm->execute($qlist);
@@ -126,13 +125,14 @@ if ($myrights<20) {
 						}
 
 						//for questions with no active lib items or unassigned to undelete, add an unassigned lib item
-						$qidstoadd = array_diff($qidstofix, $toundelqids);
+						$qidstoadd = array_values(array_diff($qidstofix, $toundelqids));
 						$stm = $DBH->prepare("INSERT INTO imas_library_items ( qsetid,libid,lastmoddate) VALUES (:qsetid, :libid, :lastmoddate)");
 						foreach($qidstoadd as $qid) {
 							$stm->execute(array(':qsetid'=>$qid, ':libid'=>0, ':lastmoddate'=>$now));
 						}
 					}
 				}
+				$DBH->commit();
 			}
 			header('Location: ' . $GLOBALS['basesiteurl'] . "/course/managelibs.php?cid=$cid");
 				
