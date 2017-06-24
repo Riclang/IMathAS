@@ -116,7 +116,7 @@ function additem($itemtoadd,$item,$questions,$qset) {
 						':solution'=>$qset['solution'][$n], ':solutionopts'=>$qset['solutionopts'][$n], ':license'=>$qset['license'][$n],
 						':ancestorauthors'=>$qset['ancestorauthors'][$n], ':otherattribution'=>$qset['otherattribution'][$n], ':extref'=>$qset['extref'][$n],
 						':lastmoddate'=>$now, ':adddate'=>$now, ':hasimg'=>$hasimg, ':id'=>$questions[$qid]['qsetid']);
-					
+
 					$query = "UPDATE imas_questionset SET description=:description,";
 					$query .= "author=:author,qtype=:qtype,";
 					$query .= "control=:control,qcontrol=:qcontrol,";
@@ -274,6 +274,10 @@ function additem($itemtoadd,$item,$questions,$qset) {
 			}
 		}
 
+		//clean up any unassigned library items that are now assigned
+		$stm = $DBH->prepare("UPDATE imas_library_items as A JOIN imas_library_items as B on A.qsetid=B.qsetid SET A.deleted=1,A.lastmoddate=:now WHERE A.libid=0 AND A.deleted=0 AND B.libid>0 AND B.deleted=0");
+		$stm->execute(array(':now'=>$now));
+
 		//recreate itemorder
 		//$item[$itemtoadd]['questions'] = preg_replace("/(\d+)/e",'$questions[\\1]["systemid"]',$item[$itemtoadd]['questions']);
 		$qs = explode(',',$item[$itemtoadd]['questions']);
@@ -335,7 +339,7 @@ function additem($itemtoadd,$item,$questions,$qset) {
 			$item[$itemtoadd]['instrfiles'] = explode("\n",$item[$itemtoadd]['instrfiles']);
 			$fileorder = array();
 			foreach ($item[$itemtoadd]['instrfiles'] as $fileinfo) {
-				
+
 				//DB list($filename,$filedescr) = explode(':::',addslashes($fileinfo));
 				list($filename,$filedescr) = explode(':::',$fileinfo);
 				if (substr($filename,0,4)=='http') {
@@ -343,7 +347,7 @@ function additem($itemtoadd,$item,$questions,$qset) {
 				} else if (!file_exists("../course/files/$filename")) {
 					$missingfiles[] = $filename;
 				}
-				
+
 				//DB $query = "INSERT INTO imas_instr_files (description,filename,itemid) VALUES ";
 				//DB $query .= "('$filedescr','$filename',$typeid)";
 				//DB mysql_query($query) or die("error on: $query: " . mysql_error());
