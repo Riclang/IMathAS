@@ -2,7 +2,7 @@
 //IMathAS:  Federated libraries update pull
 //(c) 2017 David Lippman
 
-require("../validate.php");
+require("../init.php");
 require("../includes/filehandler.php");
 
 if ($myrights<100) {
@@ -58,12 +58,12 @@ if (!$continuing) {  //start a fresh pull
 	} else {
 		$since = $stm->fetchColumn(0);
 	}
-	
+
 	$record = array('since'=>$since);
-	
+
 	//pull from remote
 	$data = file_get_contents($peerinfo['url'].'/admin/federationapi.php?peer='.$mypeername'&since='.$since.'&stage=0', false, $streamopts);
-	
+
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$now.'_0.json', 'public');
 
@@ -85,19 +85,19 @@ if (!$continuing) {  //start a fresh pull
 } else if ($pullstatus['step']==0 && !isset($_POST['record'])) {
 	//have pulled library info
 	//do interactive confirm.
-	
+
 	print_header();
 	echo '<h2>Updating Libraries</h2>';
-	
+
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
-	
+
 	$libs = array();
 	$libnames = array(0=>'Root');
 	foreach ($data['data'] as $i=>$lib) {
 		if (ctype_digit($lib['uid'])) {
 			$libs[] = $lib['uid'];
 			$libnames[$lib['uid']] = $lib['n'];
-		} else { 
+		} else {
 			//remove any invalid uniqueids
 			unset($data['data'][$i];
 		}
@@ -106,7 +106,7 @@ if (!$continuing) {  //start a fresh pull
 		echo '<p>No libraries to update</p>';
 	} else {
 		$liblist = implode(',', $libs);  //sanitized above
-		
+
 		//pull local info on these libraries
 		$query = 'SELECT A.id,A.uniqueid,A.federationlevel,A.name,A.deleted,A.lastmoddate,A.parent,B.uniqueid as parentuid,B.name AS parentname ';
 		$query .= 'FROM imas_libraries AS A LEFT JOIN imas_libraries AS B ON A.parent=B.id ';
@@ -133,7 +133,7 @@ if (!$continuing) {  //start a fresh pull
 				$chgs = array();
 				if ($lib['fl']!=$curlib['federationlevel']) {
 					$chgs['fedlevel'] = array($lib['fl'],$curlib['federationlevel']);
-				}    
+				}
 				if ($lib['n']!=$curlib['name']) {
 					$chgs['name'] = $lib['n'];
 				}
@@ -165,7 +165,7 @@ if (!$continuing) {  //start a fresh pull
 		while ($row = $stm->fetch(PDO::ASSOC)) {
 			$libnames[$row['uniqueid']] = $row['name'];
 		}
-		
+
 		echo '<h3>Libraries to Add</h3>';
 		if (count($toadd)==0) {
 			echo '<p>No libraries to add</p>';
@@ -177,7 +177,7 @@ if (!$continuing) {  //start a fresh pull
 			echo '<th>Level</th>';
 			echo '<th>Parent</th>';
 			echo '</tr></thead><tbody>';
-			
+
 			foreach ($toadd as $a) {
 				echo '<tr><td><input type="checkbox" name="toadd'.$a[0].'" value="1" checked/></td>';
 				echo '<td>'.$a[1].'</td>';
@@ -190,7 +190,7 @@ if (!$continuing) {  //start a fresh pull
 			}
 			echo '</tbody></table>';
 		}
-		
+
 		echo '<h3>Libraries to Change</h3>';
 		if (count($tochg)==0) {
 			echo '<p>No libraries to change</p>';
@@ -200,7 +200,7 @@ if (!$continuing) {  //start a fresh pull
 			echo '<th>Current Name</th>';
 			echo '<th>Changes</th>';
 			echo '</tr></thead><tbody>';
-			
+
 			foreach ($tochg as $a) {
 				echo '<tr><td>'.$a[1].'</td>';
 				echo '<td>';
@@ -236,24 +236,24 @@ if (!$continuing) {  //start a fresh pull
 						echo '</p>';
 					}
 				}
-				echo '</td></tr>';	
+				echo '</td></tr>';
 			}
-			
+
 			echo '</tbody></table>';
 		}
 	}
 	echo '<input type="submit" name="record" value="Record"/>';
-	
+
 	$done = false;
 	$autocontinue = false;
-	
+
 } else if ($pullstatus['step']==0 && isset($_POST['record'])) {
 	//have postback from library confirmation
-	
+
 	$record['step0'] = $_POST;
 
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
-	
+
 	$libs = array();
 	$parentref = array();
 	foreach ($data['data'] as $i=>$lib) {
@@ -266,18 +266,18 @@ if (!$continuing) {  //start a fresh pull
 				} else {
 					$parentref[$lib['p']][] = $lib['uid'];
 				}
-			}	
-		} else { 
+			}
+		} else {
 			//remove any invalid uniqueids
 			unset($data['data'][$i];
 		}
 	}
-	
+
 	if (count($libs)==0) {
 		echo '<p>No libraries to update</p>';
 	} else {
 		$liblist = implode(',', $libs);  //sanitized above
-		
+
 		//pull local info on these libraries
 		$query = 'SELECT A.id,A.uniqueid,A.parent,B.uniqueid as parentuid ';
 		$query .= 'FROM imas_libraries AS A LEFT JOIN imas_libraries AS B ON A.parent=B.id ';
@@ -296,7 +296,7 @@ if (!$continuing) {  //start a fresh pull
 			$localid[$row['parentuid']] = $row['parent'];
 		}
 		$childremcnt = 0;
-		
+
 		function unsetchildren($parentlib) {
 			global $parentref,$childremcnt;
 			foreach ($parentref[$parentlib] as $childlib) {
@@ -309,7 +309,7 @@ if (!$continuing) {  //start a fresh pull
 				}
 			}
 		}
-		
+
 		//don't add any libraries if we're not adding the parent lib
 		foreach ($data['data'] as $lib) {
 			if (!isset($localid[$lib['uid']])) {
@@ -318,9 +318,9 @@ if (!$continuing) {  //start a fresh pull
 					//we're not ading this library, so unset any children adds
 					unsetchildren($lib['uid']);
 				}
-			} 
+			}
 		}
-		
+
 		//don't change any parents if we're not adding the new parent
 		foreach ($data['data'] as $lib) {
 			if (isset($localid[$lib['uid']])) {
@@ -334,9 +334,9 @@ if (!$continuing) {  //start a fresh pull
 						unset($_POST['chgparent'.$lib['uid']]);
 					}
 				}
-			} 
+			}
 		}
-		
+
 		//now we can actually do the adds and changes
 		$parentstoupdate = array();
 		foreach ($data['data'] as $lib) {
@@ -353,12 +353,12 @@ if (!$continuing) {  //start a fresh pull
 				$query = 'INSERT INTO imas_libraries (uniqueid, adddate, lastmoddate, name, ownerid, federationlevel, parent, groupid) ';
 				$query .= 'VALUES (:uniqueid, :adddate, :lastmoddate, :name, :ownerid, :federationlevel, :parent, :groupid)';
 				$stm = $DBH->prepare($query);
-				$stm->execute(array(':uniqueid'=>$lib['uid'], ':adddate'=>$now, ':lastmoddate'=>$lib['lm'], 
-					':name'=>$lib['n'], ':ownerid'=>$userid, ':federationlevel'=>$_POST['fedlevel'.$lib['uid']], 
+				$stm->execute(array(':uniqueid'=>$lib['uid'], ':adddate'=>$now, ':lastmoddate'=>$lib['lm'],
+					':name'=>$lib['n'], ':ownerid'=>$userid, ':federationlevel'=>$_POST['fedlevel'.$lib['uid']],
 					':parent'=>$thisparent, ':groupid'=>$groupid));
 				//record new ID
 				$localid[$lib['uid']] = $DBH->lastInsertId();
-		
+
 }
 
 ?>

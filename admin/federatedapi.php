@@ -2,11 +2,13 @@
 //IMathAS:  Federated libraries update send
 //(c) 2017 David Lippman
 
+exit; //not ready for use yet.
+
 if (empty($_GET['peer']) || empty($_GET['since']) || !isset($_SERVER['HTTP_AUTHORIZATON'])) {
 //	exit;
 }
 $since = intval($_GET['since']);
-require("../config.php");
+require("../init_without_validate.php");
 require("../includes/filehandler.php");
 /*
 $stm = $DBH->prepare("SELECT id,secret FROM imas_federation_peers WHERE peername=:peername");
@@ -36,15 +38,15 @@ if ($stage == 0) { //send updated libraries
 	$libs = array();
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		$libs[] = array('uid'=>$row['uniqueid'], 'fl'=>$row['federationlevel'], 'n'=>$row['name'],
-			'd'=>$row['deleted'], 'lm'=>$row['lastmoddate'], 'p'=>$row['parent']==0?0:$row['parentuid']);	
+			'd'=>$row['deleted'], 'lm'=>$row['lastmoddate'], 'p'=>$row['parent']==0?0:$row['parentuid']);
 	}
 	echo json_encode(array('since'=>$since, 'stage'=>0, 'data'=>$libs));
-	
+
 	//record this pull
 	$now = time();
 	$stm = $DBH->prepare('UPDATE imas_federation_peers SET lastpull=:now WHERE peername=:peername')
 	$stm->execute(array(':now'=>$now, ':peername'=>$_GET['peer']));
-	exit;	
+	exit;
 } else if ($stage == 1) { //send updated questions
 	//we're going to order from most recent back so that if something updates while we're
 	//pulling, it might just cause us to re-send something rather than miss something
@@ -62,9 +64,9 @@ if ($stage == 0) { //send updated libraries
 	$query .= 'JOIN imas_libraries AS il ON il.id=ili.libid AND il.federationlevel>0 AND il.userights=8 ';
 	$query .= 'ORDER BY iq.lastmoddate DESC LIMIT '.$batchsize.' OFFSET '.$offset;
 	$stm = $DBH->prepare($query);
-	
+
 	$img_stm = $DBH->prepare("SELECT var,filename,alttext FROM imas_qimages WHERE qsetid=:qsetid");
-	
+
 	$stm->execute(array(':since'=>$since));
 	$qinfo = array();
 	$qcnt = -1; $lastq = -1; $linecnt = -1;
@@ -75,7 +77,7 @@ if ($stage == 0) { //send updated libraries
 		} else { //new question
 			//we need to stop before the full offset to ensure all the library entries
 			//for a question are sent with the question
-			if ($linecnt>.9*$batchsize) {break;} 
+			if ($linecnt>.9*$batchsize) {break;}
 			$qcnt++;
 			$qinfo[$qcnt] = array('uid'=>$row['uniqueid'], 'lm'=>$row['lastmoddate'], 'au'=>$row['author'],
 				'ds'=>$row['description'], 'qt'=>$row['qtype'], 'cc'=>$row['control'],
@@ -88,7 +90,7 @@ if ($stage == 0) { //send updated libraries
 			if ($row['hasimg']>0) {
 				$img_stm->execute(array(':qsetid'=>$row['id']));
 				while ($imgrow = $img_stm->fetch(PDO::FETCH_ASSOC)) {
-					$qinfo[$qcnt]['is'][] = array('v'=>$imgrow['var'], 
+					$qinfo[$qcnt]['is'][] = array('v'=>$imgrow['var'],
 						'f'=>getqimageurl($imgrow['filename'],true),
 						'a'=>$imgrow['alttext']);
 				}
@@ -113,4 +115,3 @@ if ($stage == 0) { //send updated libraries
 	exit;
 }
 ?>
-
