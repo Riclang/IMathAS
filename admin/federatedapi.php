@@ -79,20 +79,21 @@ if ($stage == 0) { //send updated libraries
 			//for a question are sent with the question
 			if ($linecnt>.9*$batchsize) {break;}
 			$qcnt++;
-			$qinfo[$qcnt] = array('uid'=>$row['uniqueid'], 'lm'=>$row['lastmoddate'], 'au'=>$row['author'],
-				'ds'=>$row['description'], 'qt'=>$row['qtype'], 'cc'=>$row['control'],
-				'qc'=>$row['qcontrol'], 'qt'=>$row['qtext'], 'an'=>$row['answer'],
-				'ex'=>$row['extref'], 'd'=>$row['deleted'], 'b'=>$row['broken'],
-				'sl'=>$row['solution'], 'so'=>$row['solutionopts'], 'li'=>$row['license'],
-				'aa'=>$row['ancestorauthors'], 'oa'=>$row['otherattribution'],
-				'libs'=>array(array('l'=>$row['ulibid'], 'j'=>$row['junkflag'], 'd'=>$row['libdel'])),
-				'is'=>array());
+			$qinfo[$qcnt] = array('uniqueid'=>$row['uniqueid'], 'adddate'=>$row['adddate'],
+				'lastmoddate'=>$row['lastmoddate'], 'author'=>$row['author'],
+				'description'=>$row['description'], 'qtype'=>$row['qtype'], 'control'=>$row['control'],
+				'qcontrol'=>$row['qcontrol'], 'qtext'=>$row['qtext'], 'answer'=>$row['answer'],
+				'extref'=>$row['extref'], 'deleted'=>$row['deleted'], 'broken'=>$row['broken'],
+				'solution'=>$row['solution'], 'solutionopts'=>$row['solutionopts'], 'license'=>$row['license'],
+				'ancestorauthors'=>$row['ancestorauthors'], 'otherattribution'=>$row['otherattribution'],
+				'libs'=>array(array('ulibid'=>$row['ulibid'], 'junkflag'=>$row['junkflag'], 'deleted'=>$row['libdel'])),
+				'imgs'=>array());
 			if ($row['hasimg']>0) {
 				$img_stm->execute(array(':qsetid'=>$row['id']));
 				while ($imgrow = $img_stm->fetch(PDO::FETCH_ASSOC)) {
-					$qinfo[$qcnt]['is'][] = array('v'=>$imgrow['var'],
-						'f'=>getqimageurl($imgrow['filename'],true),
-						'a'=>$imgrow['alttext']);
+					$qinfo[$qcnt]['imgs'][] = array('var'=>$imgrow['var'],
+						'filename'=>getqimageurl($imgrow['filename'],true),
+						'alttext'=>$imgrow['alttext']);
 				}
 			}
 			$lastq = $row['id'];

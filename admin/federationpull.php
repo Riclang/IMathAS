@@ -413,10 +413,12 @@ if (!$continuing) {  //start a fresh pull
 
 	$quids = array();
 	$qdescrip = array();
+	$quidref = array();
 	foreach ($data['data'] AS $i=>$q) {
-		if (ctype_digit($q['uid'])) {
-			$quids[] = $q['uid'];
-			$qdescript[$q['uid']] = $q['ds'];
+		if (ctype_digit($q['uniqueid'])) {
+			$quids[] = $q['uniqueid'];
+			$qdescript[$q['uniqueid']] = $q['ds'];
+			$quidref[$q['uniqueid']] = $i;
 		} else {
 			//remove any invalid uniqueids
 			unset($data['data'][$i];
@@ -425,8 +427,69 @@ if (!$continuing) {  //start a fresh pull
 	if (count($quids)==0) {
 		echo '<p>No questions to update</p>';
 	} else {
+		//pull library names and local ids
+		$stm = $DBH->query("SELECT uniqueid,id,name FROM imas_libraries WHERE federationlevel>0");
+		$libdata = array();
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$libdata[$row['uniqueid']] = array('id'=>$row['id'], 'name'=>$row['name']);
+		}
+
+		//pull existing library items for imported questions
+		$placeholders = Sanitize::generateQueryPlaceholders($quids);
+		$query = "SELECT il.name,il.uniqueid,ili.qsetid FROM imas_libraries AS il ";
+		$query .= "JOIN imas_library_items AS ili ON il.id=ili.libid ";
+		$query .= "JOIN imas_questionset AS iq ON ili.qsetid=iq.id ";
+		$query .= "WHERE iq.uniqueid IN ($placeholders)";
+		$stm = $DBH->prepare($query);
+		$qlibs = array();
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			if (!isset($qlibs[$row['qsetid']])) {
+				$qlibs[$row['qsetid']] = array();
+			}
+			$qlibs[$row['qsetid']][] = $row['uniqueid'];
+		}
+
 		//pull existing question info
-		$query = "SELECT * FROM imas_"
+		//we'll interactive ask about these as needed, then worry about
+		//questions that weren't already on the system
+		$stm = $DBH->prepare("SELECT * FROM imas_questionset WHERE uniqueid IN ($placeholders)");
+		$stm->execute($quids);
+		while ($local = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$remote = $data['data'][$quidref[$local['uniqueid']]];
+			//if remote lastmod==adddate, and local lastmod is newer, skip the question
+			// since it wasn't modified remotely
+			if ($remote['adddate']==$remote['lastmoddate'] && $local['lastmoddate']>$remote['lm']) {
+				continue; //just skip it
+			}
+			echo '<h4><b>Question '.$local['id'].'</b>. ';
+			if ($local['lastmoddate']<$since) {
+				//it's been updated remotely but not locally
+				echo '<span style="color: #ff6600;">Changed Remotely - no local conflict</span>';
+			} else {
+				//it's been updated both remotely and locally - potential conflict
+				echo '<span style="color: #ff0000;">Changed Remotely and Locally - potential conflict</span>';
+			}
+			echo '</h4>';
+			if ($remote['deleted']==1 && $local['deleted']==0) {
+				echo '<p>Deleted remotely, not deleted locally.  ';
+				echo '<input type="checkbox" name="deleteq[]" value="'.$local['id'].'"> Delete locally </p>';
+			} else if ($remote['deleted']==0 && $local['deleted']==1) {
+				echo '<p>Not deleted remotely, deleted locally.  ';
+				echo '<input type="checkbox" name="undeleteq[]" value="'.$local['id'].'"> Un-delete locally and update</p>';
+			} else {
+				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
+					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
+				foreach ($fields as $field) {
+					if ($remote[$field]!=$local[$field]) {
+						echo '<p>'.ucwords($field). ' changed. ';
+						echo '<input type="checkbox" name="update'.$field.'[]" value="'.$local['id'].'" checked> Update it</p>';
+						echo '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
+						echo '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local['description'])).'</td>';
+						echo '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote['description'])).'</td></tr></table>';
+					}
+				}
+			}
+		}
 	}
 
 }
