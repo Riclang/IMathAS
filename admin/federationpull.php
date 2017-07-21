@@ -36,7 +36,7 @@ $streamopts = array(
 );
 
 //see if we have a pull to continue
-$stm = $DBH->prepare('SELECT pulltime,step,fileurl,record FROM imas_federation_pulls WHERE step<10 AND peerid=:id ORDER BY pulltime DESC LIMIT 1');
+$stm = $DBH->prepare('SELECT id,pulltime,step,fileurl,record FROM imas_federation_pulls WHERE step<10 AND peerid=:id ORDER BY pulltime DESC LIMIT 1');
 $stm->execute(array(':id'=>$peer));
 if (!$stm) {
 	$continuing = false;
@@ -89,7 +89,7 @@ if (!$continuing) {  //start a fresh pull
 	print_header();
 	echo '<h2>Updating Libraries</h2>';
 
-	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
+	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
 
 	$libs = array();
 	$libnames = array(0=>'Root');
@@ -344,8 +344,8 @@ if (!$continuing) {  //start a fresh pull
 				//add the library
 				$thisparent = 0;
 				if ($lib['p']>0) {
-					if (isset($localid[$lib['uid']])) {
-						$thisparent = $localid[$lib['uid']];
+					if (isset($localid[$lib['p']])) {
+						$thisparent = $localid[$lib['p']];
 					} else {
 						$parentstoupdate[$lib['uid']] = $lib['p'];
 					}
@@ -358,7 +358,81 @@ if (!$continuing) {  //start a fresh pull
 					':parent'=>$thisparent, ':groupid'=>$groupid));
 				//record new ID
 				$localid[$lib['uid']] = $DBH->lastInsertId();
+			}
+		}
+		//update parents if needed
+		$stm = $DBH->prepare("UPDATE imas_libraries SET parent=:parent WHERE id=:id");
+		foreach ($parentstoupdate as $libuid=>$libparentuid) {
+			$stm->execute(array(':parent'=>$localid[$libparentuid]), ':id'=>$localid[$libuid]);
+		}
+
+		//update step number and redirect to start step 1
+		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=1 WHERE id=:id");
+		$stm->execute(array(':id'=>$pullstatus['id']));
+
+		$done = false;
+		$autocontinue = true;
+
+} else if ($pullstatus['step']==1 && !isset($_POST['record'])) {
+	//pull step 1 from remote
+
+	if (isset($record['stage1offset'])) {
+		$offset = $record['stage1offset'];
+	} else {
+		$offset = 0;
+	}
+	$data = file_get_contents($peerinfo['url'].'/admin/federationapi.php?peer='.$mypeername'&since='.$since.'&stage=1&offset='.$offset, false, $streamopts);
+
+	//store for our use
+	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$now.'_1.json', 'public');
+
+	$parsed = json_decode($data, true);
+	if ($parsed===NULL) {
+		echo 'Invalid data received';
+		exit;
+	} else if ($parsed['stage']!=0) {
+		echo 'Wrong data stage sent';
+		exit;
+	}
+	//update pull record
+	$query = 'UPDATE imas_federation_pulls SET fileurl=:fileurl,record=:record,step=2 WHERE id=:id';
+	$stm = $DBH->prepare($query);
+	$stm->execute(array(':fileurl'=>'fedpulls/'.$peer.'_'.$now.'_1.json',
+											':record'=>json_encode($record), ':id'=>$pullstatus['id']));
+
+	$autocontinue = true;
+	$done = false;
+} else if ($pullstatus['step']==2 && !isset($_POST['record'])) {
+	//have pulled a batch of questions.
+	//do interactive confirmation
+
+	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
+	print_header();
+
+	echo '<h2>Updating Questions Batch</h2>';
+
+	$quids = array();
+	$qdescrip = array();
+	foreach ($data['data'] AS $i=>$q) {
+		if (ctype_digit($q['uid'])) {
+			$quids[] = $q['uid'];
+			$qdescript[$q['uid']] = $q['ds'];
+		} else {
+			//remove any invalid uniqueids
+			unset($data['data'][$i];
+		}
+	}
+	if (count($quids)==0) {
+		echo '<p>No questions to update</p>';
+	} else {
+		//pull existing question info
+		$query = "SELECT * FROM imas_"
+	}
 
 }
 
+if ($autocontinue) {
+	header('Location: ' . $GLOBALS['basesiteurl'] . "/admin/federationpull.php?peer=".Sanitize::encodeUrlParam($peer));
+	exit;
+}
 ?>
