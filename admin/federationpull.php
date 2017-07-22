@@ -458,7 +458,7 @@ if (!$continuing) {  //start a fresh pull
 			$remote = $data['data'][$quidref[$local['uniqueid']]];
 			//if remote lastmod==adddate, and local lastmod is newer, skip the question
 			// since it wasn't modified remotely
-			if ($remote['adddate']==$remote['lastmoddate'] && $local['lastmoddate']>$remote['lm']) {
+			if ($remote['adddate']==$remote['lastmoddate'] && $local['lastmoddate']>$remote['lastmoddate']) {
 				continue; //just skip it
 			}
 			echo '<h4><b>Question '.$local['id'].'</b>. ';
@@ -477,6 +477,7 @@ if (!$continuing) {  //start a fresh pull
 				echo '<p>Not deleted remotely, deleted locally.  ';
 				echo '<input type="checkbox" name="undeleteq[]" value="'.$local['id'].'"> Un-delete locally and update</p>';
 			} else {
+				//show changes to most fields
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
 					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
 				foreach ($fields as $field) {
@@ -488,6 +489,11 @@ if (!$continuing) {  //start a fresh pull
 						echo '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote['description'])).'</td></tr></table>';
 					}
 				}
+				//TODO:  Figure a way to handle replaceby
+				//check qimages
+
+				//check libraries
+
 			}
 		}
 	}
