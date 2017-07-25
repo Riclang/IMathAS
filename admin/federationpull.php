@@ -10,13 +10,17 @@ if ($myrights<100) {
 	exit;
 }
 
-function print_header() {
-	require("../header.php");
-	echo '<h1>Pulling from Federation Peer</h1>';
-}
-
 $peer = intval($_GET['peer']);
 $mypeername = isset($CFG['federatedname'])?$CFG['federatedname']:$installname;
+
+function print_header() {
+	global $peer;
+	require("../header.php");
+	echo '<h1>Pulling from Federation Peer</h1>';
+	echo '<form method="post" action="federationpull.php?peer='.Sanitize::onlyInt($peer).'">';
+}
+
+
 
 //look up the peer to call
 $stm = $DBH->prepare('SELECT peername,peerdescription,secret,url FROM imas_federation_peers WHERE id=:id');
@@ -436,17 +440,17 @@ if (!$continuing) {  //start a fresh pull
 
 		//pull existing library items for imported questions
 		$placeholders = Sanitize::generateQueryPlaceholders($quids);
-		$query = "SELECT il.name,il.uniqueid,ili.qsetid FROM imas_libraries AS il ";
+		$query = "SELECT il.uniqueid,ili.id,ili.qsetid,ili.deleted,ili.junkflag FROM imas_libraries AS il ";
 		$query .= "JOIN imas_library_items AS ili ON il.id=ili.libid ";
 		$query .= "JOIN imas_questionset AS iq ON ili.qsetid=iq.id ";
 		$query .= "WHERE iq.uniqueid IN ($placeholders)";
 		$stm = $DBH->prepare($query);
-		$qlibs = array();
+		$qlibs= array();
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			if (!isset($qlibs[$row['qsetid']])) {
 				$qlibs[$row['qsetid']] = array();
 			}
-			$qlibs[$row['qsetid']][] = $row['uniqueid'];
+			$qlibs[$row['qsetid']][$row['uniqueid']] = array('deleted'=>$row['deleted'], 'junkflag'=>$row['junkflag'],'iliid'=>$row['id']);
 		}
 
 		//pull existing question info
@@ -461,6 +465,48 @@ if (!$continuing) {  //start a fresh pull
 			if ($remote['adddate']==$remote['lastmoddate'] && $local['lastmoddate']>$remote['lastmoddate']) {
 				continue; //just skip it
 			}
+
+			//check libraries
+			$livesinalib = false;  $libhtml = '';
+			$remotelibs = array();
+			foreach ($remote['libs'] as $rlib) {
+				$remotelibs[] = $rlib['ulibid'];
+				if (isset($qlibs[$local['id']][$rlib['ulibid']])) {
+					$llib = $qlibs[$local['id']][$rlib['ulibid']];
+					//question is already in lib - look for changes.
+					if ($llib['deleted']==1 && $rlib['deleted']==0) {
+						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+						$libhtml .= 'Not deleted remotely, deleted locally. ';
+						$libhtml .= '<input type="checkbox" name="undeleteli[]" value="'.$llib['iliid'].'" checked> Un-delete locally and update</li>';
+					} else if ($llib['deleted']==0 && $rlib['deleted']==1) {
+						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+						$libhtml .= 'Deleted remotely, not deleted locally. ';
+						$libhtml .= '<input type="checkbox" name="deleteli[]" value="'.$llib['iliid'].'"> Delete locally </li>';
+					} else if ($llib['junkflag']==1 && $rlib['junkflag']==0) {
+						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+						$libhtml .= 'Marked OK remotely, Marked as wrong lib locally. ';
+						$libhtml .= '<input type="checkbox" name="unjunkli[]" value="'.$llib['iliid'].'" checked> Un-mark as wrong lib</li>';
+					} else if ($llib['junkflag']==0 && $rlib['junkflag']==1) {
+						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+						$libhtml .= 'Marked as wrong lib remotely, marked OK locally. ';
+						$libhtml .= '<input type="checkbox" name="junkli[]" value="'.$llib['iliid'].'" checked> Mark as wrong lib </li>';
+					}
+					$livesinalib = true;
+				} else if (isset($libdata[$rlib['ulibid']]) && $rlib['deleted']==0 && $rlib['junkflag']==0) {
+					//new library assignment to an existing lib, and it isn't deleted or junk
+					$libhtml .= '<li>';
+					$libhtml = 'New library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'.';
+					//value is localqsetid:locallibid
+					$libhtml .= '<input type="checkbox" name="addli[]" value="'.$row['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</li>';
+					$livesinalib = true;
+				}
+			}
+			if (!$livesinalib) {
+				//we must not have created local copies of any of the libraries the question
+				//is in. No point asking about questions where we didn't bring in the library
+				continue;
+			}
+
 			echo '<h4><b>Question '.$local['id'].'</b>. ';
 			if ($local['lastmoddate']<$since) {
 				//it's been updated remotely but not locally
@@ -475,7 +521,8 @@ if (!$continuing) {  //start a fresh pull
 				echo '<input type="checkbox" name="deleteq[]" value="'.$local['id'].'"> Delete locally </p>';
 			} else if ($remote['deleted']==0 && $local['deleted']==1) {
 				echo '<p>Not deleted remotely, deleted locally.  ';
-				echo '<input type="checkbox" name="undeleteq[]" value="'.$local['id'].'"> Un-delete locally and update</p>';
+				echo '<input type="checkbox" name="undeleteq[]" value="'.$local['id'].'" checked> Un-delete locally and update</p>';
+				echo '<p>Library assignments, if undeleted:<ul>'.$libhtml.'</ul></p>';
 			} else {
 				//show changes to most fields
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
@@ -490,18 +537,22 @@ if (!$continuing) {  //start a fresh pull
 					}
 				}
 				//TODO:  Figure a way to handle replaceby
-				//check qimages
-
-				//check libraries
-
+				//plan: Update qimages if control is updated
+				echo '<p>Library assignments:<ul>'.$libhtml.'</ul></p>';
 			}
 		}
 	}
+	echo '<input type="submit" name="record" value="Record"/>';
 
+	$done = false;
+	$autocontinue = false;
 }
 
 if ($autocontinue) {
 	header('Location: ' . $GLOBALS['basesiteurl'] . "/admin/federationpull.php?peer=".Sanitize::encodeUrlParam($peer));
 	exit;
+} else {
+	echo '</form>';
+	require("../footer.php");
 }
 ?>
