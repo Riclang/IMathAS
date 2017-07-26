@@ -69,7 +69,7 @@ if ($stage == 0) { //send updated libraries
 
 	$stm->execute(array(':since'=>$since));
 	$qinfo = array();
-	$qcnt = -1; $lastq = -1; $linecnt = -1;
+	$qcnt = -1; $lastq = -1; $linecnt = -1; $hasmoreq = false;
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		$linecnt++;
 		if ($row['id']==$lastq) { //same question, different libid
@@ -77,7 +77,7 @@ if ($stage == 0) { //send updated libraries
 		} else { //new question
 			//we need to stop before the full offset to ensure all the library entries
 			//for a question are sent with the question
-			if ($linecnt>.9*$batchsize) {break;}
+			if ($linecnt>.9*$batchsize) {$hasmoreq = true; break;}
 			$qcnt++;
 			$qinfo[$qcnt] = array('uniqueid'=>$row['uniqueid'], 'adddate'=>$row['adddate'],
 				'lastmoddate'=>$row['lastmoddate'], 'author'=>$row['author'],
@@ -99,7 +99,7 @@ if ($stage == 0) { //send updated libraries
 			$lastq = $row['id'];
 		}
 	}
-	echo json_encode(array('since'=>$since, 'stage'=>1, 'nextoffset'=>($offset+$linecnt), 'data'=>$qinfo));
+	echo json_encode(array('since'=>$since, 'stage'=>1, 'nextoffset'=>$hasmoreq?($offset+$linecnt):-1, 'data'=>$qinfo));
 	exit;
 } else if ($stage == 2) { //send updated library items for unchanged questions
 	$query = 'SELECT il.uniqueid,iq.uniqueid,ili.junkflag,ili.deleted FROM ';

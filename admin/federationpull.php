@@ -371,8 +371,8 @@ if (!$continuing) {  //start a fresh pull
 		}
 
 		//update step number and redirect to start step 1
-		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=1 WHERE id=:id");
-		$stm->execute(array(':id'=>$pullstatus['id']));
+		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=1,record=:record WHERE id=:id");
+		$stm->execute(array(':record'=>json_encode($record), ':id'=>$pullstatus['id']));
 
 		$done = false;
 		$autocontinue = true;
@@ -414,6 +414,8 @@ if (!$continuing) {  //start a fresh pull
 	print_header();
 
 	echo '<h2>Updating Questions Batch</h2>';
+
+	echo '<input type="hidden" name="nextoffset" value="'.Sanitize::onlyInt($data['nextoffset']).'"/>';
 
 	$quids = array();
 	$qdescrip = array();
@@ -546,6 +548,34 @@ if (!$continuing) {  //start a fresh pull
 
 	$done = false;
 	$autocontinue = false;
+} else if ($pullstatus['step']==2 && isset($_POST['record'])) {
+	//record results from interactive.
+	//when done, look at nextoffset:  if -1, then all questions have been sent,
+	//and autocontinue to step 3
+	//if not, update nextoffset record and reset step to 1 before autocontinue
+
+	$record['step1-'.$record['stage1offset']] = $_POST;
+
+	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
+
+	//do work
+
+
+
+
+	if ($_POST['nextoffset']==-1) {
+		//done with questions//update step number and redirect to start step 3
+		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=3,record=:record WHERE id=:id");
+		$stm->execute(array(':record'=>json_encode($record), ':id'=>$pullstatus['id']));
+	} else {
+		//more questions to pull.  Update offset, return to step 1
+		$record['stage1offset'] = $_POST['nextoffset'];
+		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=1,record=:record WHERE id=:id");
+		$stm->execute(array(':record'=>json_encode($record), ':id'=>$pullstatus['id']));
+	}
+	$done = false;
+	$autocontinue = true;
+
 }
 
 if ($autocontinue) {
