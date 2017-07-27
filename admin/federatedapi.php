@@ -59,7 +59,7 @@ if ($stage == 0) { //send updated libraries
 	}
 	$batchsize = 1000;
 	//TODO:  Handle replaceby, sourceinstall
-	$query = 'SELECT iq.*,il.uniqueid AS ulibid,ili.junkflag,ili.deleted AS libdel FROM imas_questionset as iq ';
+	$query = 'SELECT iq.*,il.uniqueid AS ulibid,ili.junkflag,ili.deleted AS libdel,ili.lastmoddate AS liblastmod FROM imas_questionset as iq ';
 	$query .= 'JOIN imas_library_items AS ili ON iq.id=ili.qsetid AND iq.lastmoddate>:since AND iq.userights>1 AND iq.license>0 ';
 	$query .= 'JOIN imas_libraries AS il ON il.id=ili.libid AND il.federationlevel>0 AND il.userights=8 ';
 	$query .= 'ORDER BY iq.lastmoddate DESC LIMIT '.$batchsize.' OFFSET '.$offset;
@@ -86,7 +86,7 @@ if ($stage == 0) { //send updated libraries
 				'extref'=>$row['extref'], 'deleted'=>$row['deleted'], 'broken'=>$row['broken'],
 				'solution'=>$row['solution'], 'solutionopts'=>$row['solutionopts'], 'license'=>$row['license'],
 				'ancestorauthors'=>$row['ancestorauthors'], 'otherattribution'=>$row['otherattribution'],
-				'libs'=>array(array('ulibid'=>$row['ulibid'], 'junkflag'=>$row['junkflag'], 'deleted'=>$row['libdel'])),
+				'libs'=>array(array('ulibid'=>$row['ulibid'], 'junkflag'=>$row['junkflag'], 'deleted'=>$row['libdel'], 'lastmoddate'=>$row['liblastmod'])),
 				'imgs'=>array());
 			if ($row['hasimg']>0) {
 				$img_stm->execute(array(':qsetid'=>$row['id']));

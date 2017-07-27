@@ -418,12 +418,10 @@ if (!$continuing) {  //start a fresh pull
 	echo '<input type="hidden" name="nextoffset" value="'.Sanitize::onlyInt($data['nextoffset']).'"/>';
 
 	$quids = array();
-	$qdescrip = array();
 	$quidref = array();
 	foreach ($data['data'] AS $i=>$q) {
 		if (ctype_digit($q['uniqueid'])) {
 			$quids[] = $q['uniqueid'];
-			$qdescript[$q['uniqueid']] = $q['ds'];
 			$quidref[$q['uniqueid']] = $i;
 		} else {
 			//remove any invalid uniqueids
@@ -442,7 +440,7 @@ if (!$continuing) {  //start a fresh pull
 
 		//pull existing library items for imported questions
 		$placeholders = Sanitize::generateQueryPlaceholders($quids);
-		$query = "SELECT il.uniqueid,ili.id,ili.qsetid,ili.deleted,ili.junkflag FROM imas_libraries AS il ";
+		$query = "SELECT il.uniqueid,ili.id,ili.qsetid,ili.deleted,ili.junkflag,ili.lastmoddate FROM imas_libraries AS il ";
 		$query .= "JOIN imas_library_items AS ili ON il.id=ili.libid ";
 		$query .= "JOIN imas_questionset AS iq ON ili.qsetid=iq.id ";
 		$query .= "WHERE iq.uniqueid IN ($placeholders)";
@@ -452,7 +450,8 @@ if (!$continuing) {  //start a fresh pull
 			if (!isset($qlibs[$row['qsetid']])) {
 				$qlibs[$row['qsetid']] = array();
 			}
-			$qlibs[$row['qsetid']][$row['uniqueid']] = array('deleted'=>$row['deleted'], 'junkflag'=>$row['junkflag'],'iliid'=>$row['id']);
+			$qlibs[$row['qsetid']][$row['uniqueid']] = array('deleted'=>$row['deleted'],
+				'junkflag'=>$row['junkflag'], 'lastmoddate'=>$row['lastmoddate'], 'iliid'=>$row['id']);
 		}
 
 		//pull existing question info
@@ -462,8 +461,10 @@ if (!$continuing) {  //start a fresh pull
 		$stm->execute($quids);
 		while ($local = $stm->fetch(PDO::FETCH_ASSOC)) {
 			$remote = $data['data'][$quidref[$local['uniqueid']]];
+			//unset $quidref for this question so we know it's been used
+			unset($quidref[$local['uniqueid']]);
 			//if remote lastmod==adddate, and local lastmod is newer, skip the question
-			// since it wasn't modified remotely
+			// since it wasn't modified remotely after being added
 			if ($remote['adddate']==$remote['lastmoddate'] && $local['lastmoddate']>$remote['lastmoddate']) {
 				continue; //just skip it
 			}
@@ -475,7 +476,12 @@ if (!$continuing) {  //start a fresh pull
 				$remotelibs[] = $rlib['ulibid'];
 				if (isset($qlibs[$local['id']][$rlib['ulibid']])) {
 					$llib = $qlibs[$local['id']][$rlib['ulibid']];
-					//question is already in lib - look for changes.
+					$livesinalib = true;
+					//question is already in lib locally - look for changes.
+					if ($rlib['lastmoddate']<$since) {
+						//since already on our system, and hasn't been updated since last pull, skip this part
+						continue;
+					}
 					if ($llib['deleted']==1 && $rlib['deleted']==0) {
 						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
 						$libhtml .= 'Not deleted remotely, deleted locally. ';
@@ -493,13 +499,13 @@ if (!$continuing) {  //start a fresh pull
 						$libhtml .= 'Marked as wrong lib remotely, marked OK locally. ';
 						$libhtml .= '<input type="checkbox" name="junkli[]" value="'.$llib['iliid'].'" checked> Mark as wrong lib </li>';
 					}
-					$livesinalib = true;
+
 				} else if (isset($libdata[$rlib['ulibid']]) && $rlib['deleted']==0 && $rlib['junkflag']==0) {
 					//new library assignment to an existing lib, and it isn't deleted or junk
 					$libhtml .= '<li>';
 					$libhtml = 'New library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'.';
 					//value is localqsetid:locallibid
-					$libhtml .= '<input type="checkbox" name="addli[]" value="'.$row['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</li>';
+					$libhtml .= '<input type="checkbox" name="addli[]" value="'.$row['id'].':'.$libdata[$rlib['ulibid']]['id'].':'.$rlib['lastmoddate'].'" checked> Add it</li>';
 					$livesinalib = true;
 				}
 			}
@@ -510,6 +516,7 @@ if (!$continuing) {  //start a fresh pull
 			}
 
 			echo '<h4><b>Question '.$local['id'].'</b>. ';
+			echo '<input type="hidden" name="uidref'.$local['uniqueid'].'" value="'.$local['id'].'" />';
 			if ($local['lastmoddate']<$since) {
 				//it's been updated remotely but not locally
 				echo '<span style="color: #ff6600;">Changed Remotely - no local conflict</span>';
@@ -520,10 +527,10 @@ if (!$continuing) {  //start a fresh pull
 			echo '</h4>';
 			if ($remote['deleted']==1 && $local['deleted']==0) {
 				echo '<p>Deleted remotely, not deleted locally.  ';
-				echo '<input type="checkbox" name="deleteq[]" value="'.$local['id'].'"> Delete locally </p>';
+				echo '<input type="checkbox" name="deleteq-'.$local['uniqueid'].'" value="1"> Delete locally </p>';
 			} else if ($remote['deleted']==0 && $local['deleted']==1) {
 				echo '<p>Not deleted remotely, deleted locally.  ';
-				echo '<input type="checkbox" name="undeleteq[]" value="'.$local['id'].'" checked> Un-delete locally and update</p>';
+				echo '<input type="checkbox" name="undeleteq-'.$local['uniqueid'].'" value="1" checked> Un-delete locally and update</p>';
 				echo '<p>Library assignments, if undeleted:<ul>'.$libhtml.'</ul></p>';
 			} else {
 				//show changes to most fields
@@ -532,7 +539,7 @@ if (!$continuing) {  //start a fresh pull
 				foreach ($fields as $field) {
 					if ($remote[$field]!=$local[$field]) {
 						echo '<p>'.ucwords($field). ' changed. ';
-						echo '<input type="checkbox" name="update'.$field.'[]" value="'.$local['id'].'" checked> Update it</p>';
+						echo '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
 						echo '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
 						echo '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local['description'])).'</td>';
 						echo '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote['description'])).'</td></tr></table>';
@@ -540,9 +547,43 @@ if (!$continuing) {  //start a fresh pull
 				}
 				//TODO:  Figure a way to handle replaceby
 				//plan: Update qimages if control is updated
+				//TODO: figure out how to tell if qimages are changed
 				echo '<p>Library assignments:<ul>'.$libhtml.'</ul></p>';
 			}
 		}
+
+		//handle any new questions
+		//we've unset any $quidref that were used, so loop over unused
+		if (count($quidref)>0) {
+			echo '<h3>Adding Questions</h3>';
+		}
+		foreach ($quidref as $uqid=>$i) {
+			$remote = $data['data'][$i];
+			//check libraries
+			$livesinalib = false;  $libhtml = '';
+			$remotelibs = array();
+			foreach ($remote['libs'] as $rlib) {
+				$remotelibs[] = $rlib['ulibid'];
+				if (isset($libdata[$rlib['ulibid']]) && $rlib['deleted']==0 && $rlib['junkflag']==0) {
+					//new library assignment to an existing lib, and it isn't deleted or junk
+					$libhtml .= '<li>';
+					$libhtml = 'New library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'.';
+					//value is localqsetid:locallibid
+					$libhtml .= '<input type="checkbox" name="addnewqli[]" value="'.$remote['uniqueid'].':'.$libdata[$rlib['ulibid']]['id'].':'.$rlib['lastmoddate'].'" checked> Add it</li>';
+					$livesinalib = true;
+				}
+			}
+			if (!$livesinalib) {
+				//we must not have created local copies of any of the libraries the question
+				//is in. No point asking about questions where we didn't bring in the library
+				continue;
+			}
+			echo '<h4><b>Question UID '.$remote['uniqueid'].'</b>. ';
+			echo '<p>Description: '.Sanitize::encodeStringForDisplay($remote['description']).'</p>';
+			echo '<p><input type="checkbox" name="addnewq-'.$remote['uniqueid'].'" value="1" checked> Add Question.</p>';
+			echo '<p>Library assignments: <ul>'.$libhtml.'</ul></p>';
+		}
+
 	}
 	echo '<input type="submit" name="record" value="Record"/>';
 
@@ -558,10 +599,126 @@ if (!$continuing) {  //start a fresh pull
 
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
 
-	//do work
+	$quids = array();
+	$quidref = array();
+	$localqidref = array();
+	foreach ($data['data'] AS $i=>$q) {
+		if (ctype_digit($q['uniqueid'])) {
+			$quids[] = $q['uniqueid'];
+			$quidref[$q['uniqueid']] = $i;
+		} else {
+			//remove any invalid uniqueids
+			unset($data['data'][$i];
+		}
+	}
 
+	$delq = $DBH->prepare("UPDATE imas_questionset SET deleted=1,lastmoddate=:lastmoddate WHERE id=:id");
+	$delli_by_qid = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:lastmoddate WHERE qsetid=:id");
+	$del_qimg = $DBH->prepare("DELETE FROM imas_qimages WHERE qsetid=:qsetid");
+	$add_qimg = $DBH->prepare("INSERT INTO imas_qimages (qsetid,var,filename,alttext) VALUES (:qsetid,:var,:filename,:alttext)");
+	$qfields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
+		'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
+	$qallfields = array('uniqueid','adddate','lastmoddate','author','description', 'qtype', 'control','qcontrol', 'qtext', 'answer','extref','broken','deleted',
+		'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
+	$addq = $DBH->prepare("INSERT INTO imas_questionset (".implode(',',$qallfields).",ownerid) VALUES (:".implode(',:',$qallfields).",:ownerid)");
 
+	//DO WORK
+	//loop over questions
+	foreach ($quids as $quid) {
+		if (isset($_POST['uidref'.$quid])) {
+			$localqidref[$quid] = Sanitize::onlyInt($_POST['uidref'.$quid]);
+		}
+		$remote = $data['data'][$quidref[$quid]];
+		if (isset($_POST['deleteq-'.$quid])) {
+			//  if isset deleteq-uniqueid then set as deleted
+			$delq->execute(array(':lastmoddate'=>$remote['lastmoddate'], ':id'=>$localqidref[$quid]));
+			$delli_by_qid->execute(array(':lastmoddate'=>$remote['lastmoddate'], ':id'=>$localqidref[$quid]));
+		} else if (isset($_POST['addnewq-'.$quid])) {
+			//  if isset addnewq-uniqueid then Insert
+			$vals = array();
+			foreach ($qallfields as $field) {
+				$vals[':'.$field] = $remote[$field];
+			}
+			$vals[':ownerid'] = $userid;
+			$addq->execute($vals);
+			$localqidref[$quid] = $DBH->lastInsertId();
+		} else {
+			// if isset undeleteq-uniqueid then update all
+			// if isset updateField-uniqueid then update those
+			$chgs = array();
+			$vals = array();
+			foreach ($qfields as $field) {
+				if (isset($_POST['update'.$field.'-'.$quid]) || isset($_POST['undeleteq-'.$quid])) {
+						$chgs[] = $field.'=:'.$field;
+						$vals[':'.$field] = $remote[$field];
+				}
+			}
+			if (isset($_POST['undeleteq-'.$quid])) {
+				$chgs[] = "deleted=0";
+			}
+			if (count($chgs)>0) {
+				//there are changes to make - make them
+				$chgs[] = "lastmoddate=:lastmoddate";
+				$vals[":lastmoddate"] = $remote["lastmoddate"];
+				$sets = implode(',', $chgs);
+				$vals[':id'] = $localqidref[$quid];
+				$stm = $DBH->prepare("UPDATE imas_questionset SET $sets WHERE id=:id");
+				$stm->execute($vals);
+				if (isset($_POST['updatecontrol-'.$quid]) && count($remote['imgs'])>0) {
+					//TODO:  update imas_qimages
+					//lazy - should do better
+					//delete old ones
+					$del_qimg->execute(array(':qsetid'=>$localqidref[$quid]));
+					//add new ones
+					foreach ($remote['imgs'] as $img) {
+						$add_qimg->execute(array(':qsetid'=>$localqidref[$quid],
+							':var'=>$img['var'], ':filename'=>$img['filename'], ':alttext'=>$img['alttext']));
+					}
+				}
+			}
+		}
+	} // end loop over questions
 
+	$now = time();
+
+	$livals = array();
+	foreach ($_POST['addnewqli'] as $liinfo) {
+		//loop over addnewqli and resolve uniqueid:locallibid to localqid:locallibid
+		$liparts = explode(':', $liinfo);
+		if (!isset($localqidref[$liinfo[0]])) {
+			//don't have a local id - skip it
+			continue;
+		}
+		array_push($livals, $localqidref[$liinfo[0]], $liinfo[1], $userid, $now);
+	}
+	foreach ($_POST['addli'] as $liinfo) {
+		//loop over addli and add localqid:locallibid
+		$liparts = explode(':', $liinfo);
+		array_push($livals, $liinfo[0], $liinfo[1], $userid, $now);
+	}
+	//add new li if any
+	if (count($livals)>0) {
+		$placeholders = Sanitize::generateQueryPlaceholdersGrouped($livals,3);
+		$stm = $DBH->prepare("INSERT INTO imas_library_items (qsetid,libid,ownerid,lastmoddate) VALUES $placeholders");
+		$stm->execute($livals);
+	}
+
+	//loop over undeleteli, deleteli, unjunkli, junkli and make the change
+	$placeholders = Sanitize::generateQueryPlaceholders($_POST['undeleteli']);
+	$stm->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=? WHERE id IN ($placeholders)");
+	$stm->execute(array_merge($now,$_POST['undeleteli']));
+
+	$placeholders = Sanitize::generateQueryPlaceholders($_POST['deleteli']);
+	$stm->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=? WHERE id IN ($placeholders)");
+	$stm->execute(array_merge($now,$_POST['deleteli']));
+
+	$placeholders = Sanitize::generateQueryPlaceholders($_POST['unjunkli']);
+	$stm->prepare("UPDATE imas_library_items SET junkflag=0,lastmoddate=? WHERE id IN ($placeholders)");
+	$stm->execute(array_merge($now,$_POST['unjunkli']));
+
+	$placeholders = Sanitize::generateQueryPlaceholders($_POST['junkli']);
+	$stm->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
+	$stm->execute(array_merge($now,$_POST['junkli']));
 
 	if ($_POST['nextoffset']==-1) {
 		//done with questions//update step number and redirect to start step 3
