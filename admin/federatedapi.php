@@ -23,6 +23,15 @@ if ($peer['secret'] != $_SERVER['HTTP_AUTHORIZATON']) {
 	exit;
 }
 */
+
+$stm = $DBH->prepare("SELECT pulltime FROM imas_federation_pulls WHERE peerid=:peerid");
+$stm->execute(array(":peerid"=>$peer['id']));
+$toskip = array();
+while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+	$toskip[] = $row['pulltime'];
+}
+$skipph = Sanitize::generateQueryPlaceholders($toskip);
+
 if (isset($_GET['stage'])) {
 	$stage = intval($_GET['stage']);
 } else {
@@ -32,9 +41,15 @@ if (isset($_GET['stage'])) {
 if ($stage == 0) { //send updated libraries
 	$query = 'SELECT A.id,A.uniqueid,A.federationlevel,A.name,A.deleted,A.lastmoddate,A.parent,B.uniqueid as parentuid ';
 	$query .= 'FROM imas_libraries AS A LEFT JOIN imas_libraries AS B ON A.parent=B.id ';
-	$query .= 'WHERE A.lastmoddate>:since AND A.federationlevel>0 AND A.userights=8';
-	$stm = $DBH->prepare($query);
-	$stm->execute(array(':since'=>$since));
+	$query .= 'WHERE A.lastmoddate>? AND A.federationlevel>0 AND A.userights=8 ';
+	if (count($toskip)>0) {
+		$query .= "AND A.lastmoddate NOT IN ($skipph)";
+		$stm = $DBH->prepare($query);
+		$stm->execute(array_merge(array($since),$toskip)));
+	} else {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array($since));
+	}
 	$libs = array();
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		$libs[] = array('uid'=>$row['uniqueid'], 'fl'=>$row['federationlevel'], 'n'=>$row['name'],
@@ -44,7 +59,7 @@ if ($stage == 0) { //send updated libraries
 
 	//record this pull
 	$now = time();
-	$stm = $DBH->prepare('UPDATE imas_federation_peers SET lastpull=:now WHERE peername=:peername')
+	$stm = $DBH->prepare('UPDATE imas_federation_peers SET lastpull=:now WHERE peername=:peername');
 	$stm->execute(array(':now'=>$now, ':peername'=>$_GET['peer']));
 	exit;
 } else if ($stage == 1) { //send updated questions
@@ -60,14 +75,23 @@ if ($stage == 0) { //send updated libraries
 	$batchsize = 1000;
 	//TODO:  Handle replaceby, sourceinstall
 	$query = 'SELECT iq.*,il.uniqueid AS ulibid,ili.junkflag,ili.deleted AS libdel,ili.lastmoddate AS liblastmod FROM imas_questionset as iq ';
-	$query .= 'JOIN imas_library_items AS ili ON iq.id=ili.qsetid AND iq.lastmoddate>:since AND iq.userights>1 AND iq.license>0 ';
+	$query .= 'JOIN imas_library_items AS ili ON iq.id=ili.qsetid AND iq.lastmoddate>? AND iq.userights>1 AND iq.license>0 ';
 	$query .= 'JOIN imas_libraries AS il ON il.id=ili.libid AND il.federationlevel>0 AND il.userights=8 ';
+	if (count($toskip)>0) {
+		$query .= "AND iq.lastmoddate NOT IN ($skipph) ";
+	}
 	$query .= 'ORDER BY iq.lastmoddate DESC LIMIT '.$batchsize.' OFFSET '.$offset;
 	$stm = $DBH->prepare($query);
 
 	$img_stm = $DBH->prepare("SELECT var,filename,alttext FROM imas_qimages WHERE qsetid=:qsetid");
 
-	$stm->execute(array(':since'=>$since));
+	if (count($toskip)>0) {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array_merge(array($since),$toskip)));
+	} else {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array($since));
+	}
 	$qinfo = array();
 	$qcnt = -1; $lastq = -1; $linecnt = -1; $hasmoreq = false;
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
@@ -101,16 +125,25 @@ if ($stage == 0) { //send updated libraries
 	}
 	echo json_encode(array('since'=>$since, 'stage'=>1, 'nextoffset'=>$hasmoreq?($offset+$linecnt):-1, 'data'=>$qinfo));
 	exit;
-} else if ($stage == 2) { //send updated library items for unchanged questions
+} else if ($stage == 3) { //send updated library items for unchanged questions
 	$query = 'SELECT il.uniqueid,iq.uniqueid,ili.junkflag,ili.deleted FROM ';
 	$query .= 'imas_libraries AS il JOIN imas_library_items AS ili ON il.id=ili.libid AND il.federationlevel>0 AND il.userights=8 ';
 	$query .= 'JOIN imas_questionset AS iq ON iq.id=ili.qsetid ';
-	$query .= 'WHERE ili.lastmoddate>:since AND iq.lastmoddate<=:since2 ';
+	$query .= 'WHERE ili.lastmoddate>? AND iq.lastmoddate<=? ';
+	if (count($toskip)>0) {
+		$query .= "AND ili.lastmoddate NOT IN ($skipph) ";
+	}
 	$stm = $DBH->prepare($query);
-	$stm->execute(array(':since'=>$since, ':since2'=>$since));
+	if (count($toskip)>0) {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array_merge(array($since,$since),$toskip)));
+	} else {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array($since,$since));
+	}
 	$libitems = array();
 	while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-		 $libitems[] = array('l'=>$row[0], 'q'=>$row[1], 'j'=>$row[2], 'd'=>$row[3]);
+		 $libitems[] = array('ulibid'=>$row[0], 'uniqueid'=>$row[1], 'junkflag'=>$row[2], 'deleted'=>$row[3]);
 	}
 	echo json_encode(array('since'=>$since, 'stage'=>3, 'data'=>$libitems));
 	exit;
