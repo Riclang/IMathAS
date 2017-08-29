@@ -2,6 +2,9 @@
 //IMathAS:  Federated libraries update pull
 //(c) 2017 David Lippman
 
+//TODO: Fix handling of library items when questions are deleted, undeleted
+//      when questions are added
+
 require("../init.php");
 require("../includes/filehandler.php");
 
@@ -15,7 +18,6 @@ $mypeername = isset($CFG['federatedname'])?$CFG['federatedname']:$installname;
 
 function print_header() {
 	global $peer;
-	require("../header.php");
 	echo '<h1>Pulling from Federation Peer</h1>';
 	echo '<form method="post" action="federationpull.php?peer='.Sanitize::onlyInt($peer).'">';
 }
@@ -25,24 +27,24 @@ function print_header() {
 //look up the peer to call
 $stm = $DBH->prepare('SELECT peername,peerdescription,secret,url FROM imas_federation_peers WHERE id=:id');
 $stm->execute(array(':id'=>$peer));
-if (!$stm) {
+if ($stm->rowCount()==0) {
 	echo 'Invalid peer ID';
 	exit;
 }
 $peerinfo = $stm->fetch(PDO::FETCH_ASSOC);
 
 //set up our stream context for later data pulls
-$streamopts = array(
+$streamopts = stream_context_create(array(
 	'http'=>array(
 		'method'=>'GET',
-		'header'->'Authorization: '.$peerinfo['secret']."\r\n"
+		'header'=>'Authorization: '.$peerinfo['secret']."\r\n"
 	)
-);
+));
 
 //see if we have a pull to continue
 $stm = $DBH->prepare('SELECT id,pulltime,step,fileurl,record FROM imas_federation_pulls WHERE step<10 AND peerid=:id ORDER BY pulltime DESC LIMIT 1');
-$stm->execute(array(':id'=>$peer));
-if (!$stm) {
+$res = $stm->execute(array(':id'=>$peer));
+if ($stm->rowCount()==0) {
 	$continuing = false;
 } else {
 	$continuing = true;
@@ -56,8 +58,8 @@ $now = time();
 if (!$continuing) {  //start a fresh pull
 	//look up our last successful pull to them
 	$stm = $DBH->prepare('SELECT pulltime FROM imas_federation_pulls WHERE peerid=:id ORDER BY pulltime DESC LIMIT 1');
-	$stm->execute(array(':id'=>$peer));
-	if (!$stm) {
+	$res = $stm->execute(array(':id'=>$peer));
+	if ($stm->rowCount()==0) {
 		$since = 0;
 	} else {
 		$since = $stm->fetchColumn(0);
@@ -66,7 +68,11 @@ if (!$continuing) {  //start a fresh pull
 	$record = array('since'=>$since);
 
 	//pull from remote
-	$data = file_get_contents($peerinfo['url'].'/admin/federationapi.php?peer='.$mypeername'&since='.$since.'&stage=0', false, $streamopts);
+	$getdata = http_build_query( array(
+		'peer'=>$mypeername,
+		'since'=>$since,
+		'stage'=>0));
+	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata, false, $streamopts);
 
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$now.'_0.json', 'public');
@@ -79,6 +85,7 @@ if (!$continuing) {  //start a fresh pull
 		echo 'Wrong data stage sent';
 		exit;
 	}
+
 	//note that we've pulled it
 	$query = 'INSERT INTO imas_federation_pulls (peerid,pulltime,step,fileurl,record) VALUES ';
 	$query .= "(:peerid, :pulltime, 0, :fileurl, :record)";
@@ -89,8 +96,9 @@ if (!$continuing) {  //start a fresh pull
 } else if ($pullstatus['step']==0 && !isset($_POST['record'])) {
 	//have pulled library info
 	//do interactive confirm.
-
+	require("../header.php");
 	print_header();
+
 	echo '<h2>Updating Libraries</h2>';
 
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
@@ -103,7 +111,7 @@ if (!$continuing) {  //start a fresh pull
 			$libnames[$lib['uid']] = $lib['n'];
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i];
+			unset($data['data'][$i]);
 		}
 	}
 	if (count($libs)==0) {
@@ -117,7 +125,7 @@ if (!$continuing) {  //start a fresh pull
 		$query .= "WHERE A.uniqueid IN ($liblist)";
 		$stm = $DBH->query($query);
 		$libdata = array();
-		while ($row = $stm->fetch(PDO::ASSOC)) {
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			if ($row['parent']==0) { $row['parentuid'] = 0;}
 			$libdata[$row['uniqueid']] = $row;
 			$libnames[$row['parentuid']] = $row['parentname'];
@@ -129,8 +137,11 @@ if (!$continuing) {  //start a fresh pull
 		foreach ($data['data'] as $lib) {
 			if (!isset($libdata[$lib['uid']])) {
 				if ($lib['d']==0) {
-					$parent = isset($libnames[$lib['uid']])?$lib['uid']:0;
-					$toadd[] = array($lib['uid'], $lib['name'], $lib['fl'], $parent);
+					if (!isset($libnames[$lib['p']])) {
+						$neednames[] = $lib['p'];
+					}
+					$parent = $lib['p'];
+					$toadd[] = array($lib['uid'], $lib['n'], $lib['fl'], $parent);
 				}
 			} else {
 				$curlib = $libdata[$lib['uid']];
@@ -148,26 +159,27 @@ if (!$continuing) {  //start a fresh pull
 					$chgs['parent'] = array($lib['p'], $curlib['parentuid']);
 				}
 				if ($lib['d']!=$curlib['deleted']) {
-					$chgs['del'] = array($lib['n'],$curlib['deleted']);
-				}
-				if ($curlib['lastmoddate']>$since) {
-					$chgs['localmod'] = $curlib['lastmoddate'];
+					$chgs['del'] = array($lib['d'],$curlib['deleted']);
 				}
 				if (count($chgs)>0) {
+					if ($curlib['lastmoddate']>$since && $curlib['lastmoddate']!=$lib['lm']) {
+						$chgs['localmod'] = $curlib['lastmoddate'];
+					}
 					$tochg[] = array($lib['uid'], $curlib['name'], $chgs);
 				}
 			}
 		}
-		//TODO:  Look up names from $neednames list
 		foreach ($neednames as $k=>$v) {
 			if (!ctype_digit($v)) {
 				unset($neednames[$k]);
 			}
 		}
-		$neednamelist = implode(',', $neednames);
-		$stm = $DBH->query("SELECT uniqueid,name FROM imas_libraries WHERE uniqueid IN ($neednamelist)");
-		while ($row = $stm->fetch(PDO::ASSOC)) {
-			$libnames[$row['uniqueid']] = $row['name'];
+		if (count($neednames)>0) {
+			$neednamelist = implode(',', $neednames);
+			$stm = $DBH->query("SELECT uniqueid,name FROM imas_libraries WHERE uniqueid IN ($neednamelist)");
+			while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+				$libnames[$row['uniqueid']] = $row['name'];
+			}
 		}
 
 		echo '<h3>Libraries to Add</h3>';
@@ -183,13 +195,17 @@ if (!$continuing) {  //start a fresh pull
 			echo '</tr></thead><tbody>';
 
 			foreach ($toadd as $a) {
+				if (($a[3]>0 && !isset($libnames[$a[3]])) || ($a[3]==0 && $a[2]<2)) {
+					//skip if wrong level, or if parent doesn't exist;
+					continue;
+				}
 				echo '<tr><td><input type="checkbox" name="toadd'.$a[0].'" value="1" checked/></td>';
 				echo '<td>'.$a[1].'</td>';
 				echo '<td><select name="fedlevel'.$a[0].'">';
 				echo ' <option value=1 '.($a[2]==1?'selected':'').'>Federated</option>';
 				echo ' <option value=2 '.($a[2]==2?'selected':'').'>Top Level Federated</option>';
 				echo '</select></td>';
-				echo '<td>'.$a[3].'</td>';
+				echo '<td>'.($a[3]==0?'Root':$libnames[$a[3]]).'</td>';
 				echo '</tr>';
 			}
 			echo '</tbody></table>';
@@ -199,7 +215,7 @@ if (!$continuing) {  //start a fresh pull
 		if (count($tochg)==0) {
 			echo '<p>No libraries to change</p>';
 		} else {
-			echo '<table class="gb">';
+			echo '<table class="gb gridded">';
 			echo '<thead><tr>';
 			echo '<th>Current Name</th>';
 			echo '<th>Changes</th>';
@@ -211,32 +227,32 @@ if (!$continuing) {  //start a fresh pull
 				foreach ($a[2] as $type=>$chginfo) {
 					if ($type=='localmod') {
 						echo '<p>Note: Library modified locally since last pull</p>';
-					} else if ($type=='federationlevel') {
+					} else if ($type=='fedlevel') {
 						echo '<p>Fed Level<br/>Current: ';
 						if ($chginfo[1]==2) { echo 'Top Level Federated';}
 						else if ($chginfo[1]==1) { echo 'Federated';}
 						else { echo 'Not Federated';}
 						echo '<br/>New: ';
-						echo '<td><select name="fedlevel'.$a[0].'">';
+						echo '<select name="fedlevel'.$a[0].'">';
 						echo ' <option value=0>Not Federated</option>';
 						echo ' <option value=1 '.($chginfo[0]==1?'selected':'').'>Federated</option>';
 						echo ' <option value=2 '.($chginfo[0]==2?'selected':'').'>Top Level Federated</option>';
 						echo '</select></p>';
 					} else if ($type=='name') {
 						echo '<p>Name<br/>Current: '.$a[1];
-						echo '<br/><checkbox name="chgname'.$a[0].'" value=1 checked/> New: '.$chginfo[0];
+						echo '<br/><input type=checkbox name="chgname'.$a[0].'" value=1 checked/> New: '.$chginfo;
 						echo '</p>';
 					} else if ($type=='parent') {
 						echo '<p>Parent<br/>Current: '.$libnames[$chginfo[1]];
 						if (isset($libnames[$chginfo[0]])) {
-							echo '<br/><checkbox name="chgparent'.$a[0].'" value=1 checked/> New: '.$libnames[$chginfo[0]];
+							echo '<br/><input type=checkbox name="chgparent'.$a[0].'" value=1 checked/> New: '.$libnames[$chginfo[0]];
 						} else {// if new parent isn't in system or in pull
-							echo '<br/><checkbox name="chgparent'.$a[0].' disabled"/> New: Unknown';
+							echo '<br/><input type=checkbox name="chgparent'.$a[0].' disabled"/> New: Unknown';
 						}
 						echo '</p>';
-					} else if ($type=='deleted') {
+					} else if ($type=='del') {
 						echo '<p>Deleted<br/>Current: '.($chginfo[1]==1?'Yes':'No');
-						echo '<br/><checkbox name="chgdel'.$a[0].'" value=1 checked/> New: '.($chginfo[0]==1?'Yes':'No');
+						echo '<br/><input type=checkbox name="chgdel'.$a[0].'" value=1 checked/> New: '.($chginfo[0]==1?'Yes':'No');
 						echo '</p>';
 					}
 				}
@@ -254,14 +270,15 @@ if (!$continuing) {  //start a fresh pull
 } else if ($pullstatus['step']==0 && isset($_POST['record'])) {
 	//have postback from library confirmation
 
-	$record['step0'] = $_POST;
+	//$record['step0'] = $_POST;
 
-	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
+	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
 
 	$libs = array();
 	$parentref = array();
+	$altparents = array();
 	foreach ($data['data'] as $i=>$lib) {
-		if (ctype_digit($lib['uid'])) {
+		if (ctype_digit($lib['uid']) && ctype_digit($lib['p'])) {
 			$libs[] = $lib['uid'];
 			//build a backref for parents to children
 			if (isset($_POST['toadd'.$lib['uid']])) {
@@ -271,16 +288,20 @@ if (!$continuing) {  //start a fresh pull
 					$parentref[$lib['p']][] = $lib['uid'];
 				}
 			}
+			if (isset($_POST['chgparent'.$lib['uid']])) {
+				$altparents[] = $lib['p'];
+			}
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i];
+			unset($data['data'][$i]);
 		}
 	}
 
 	if (count($libs)==0) {
 		echo '<p>No libraries to update</p>';
 	} else {
-		$liblist = implode(',', $libs);  //sanitized above
+		//look up info for libraries, new q parents, and chgparent new parents
+		$liblist = implode(',', array_merge($libs,array_keys($parentref),$altparents));  //sanitized above
 
 		//pull local info on these libraries
 		$query = 'SELECT A.id,A.uniqueid,A.parent,B.uniqueid as parentuid ';
@@ -288,7 +309,8 @@ if (!$continuing) {  //start a fresh pull
 		$query .= "WHERE A.uniqueid IN ($liblist)";
 		$stm = $DBH->query($query);
 		$localids = array();
-		while ($row = $stm->fetch(PDO::ASSOC)) {
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			if ($row['parent']===null) {$row['parent'] = 0;}
 			if ($row['parent']==0) { $row['parentuid'] = 0;}
 			//backref for parents to children
 			if (!isset($parentref[$row['parentuid']])) {
@@ -335,6 +357,8 @@ if (!$continuing) {  //start a fresh pull
 					//actually adding it
 					//if not, don't change the parent
 					if (!isset($localid[$lib['p']]) && !isset($_POST['toadd'.$lib['uid']])) {
+						echo $lib['p'];
+						print_r($localid);
 						unset($_POST['chgparent'.$lib['uid']]);
 					}
 				}
@@ -361,21 +385,63 @@ if (!$continuing) {  //start a fresh pull
 					':name'=>$lib['n'], ':ownerid'=>$userid, ':federationlevel'=>$_POST['fedlevel'.$lib['uid']],
 					':parent'=>$thisparent, ':groupid'=>$groupid));
 				//record new ID
+				"Adding lib<Br/>";
 				$localid[$lib['uid']] = $DBH->lastInsertId();
 			}
 		}
 		//update parents if needed
 		$stm = $DBH->prepare("UPDATE imas_libraries SET parent=:parent WHERE id=:id");
 		foreach ($parentstoupdate as $libuid=>$libparentuid) {
-			$stm->execute(array(':parent'=>$localid[$libparentuid]), ':id'=>$localid[$libuid]);
+			$stm->execute(array(':parent'=>$localid[$libparentuid], ':id'=>$localid[$libuid]));
 		}
 
-		//update step number and redirect to start step 1
-		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=1,record=:record WHERE id=:id");
-		$stm->execute(array(':record'=>json_encode($record), ':id'=>$pullstatus['id']));
+		//now we can actually do the changes
+		foreach ($data['data'] as $lib) {
+			if (isset($_POST['fedlevel'.$lib['uid']])) {
+				$stm = $DBH->prepare("UPDATE imas_libraries SET federationlevel=:fedlevel,lastmoddate=:lastmod WHERE id=:id AND federationlevel<>:fedlevel2");
+				$stm->execute(array(':fedlevel'=>$_POST['fedlevel'.$lib['uid']], ':fedlevel2'=>$_POST['fedlevel'.$lib['uid']],
+					':lastmod'=>$pullstatus['pulltime'],
+					':id'=>$localid[$lib['uid']]));
+				echo "setting fedlive for ".$localid[$lib['uid']].'<Br/>';
+			}
+			if (isset($_POST['chgname'.$lib['uid']])) {
+				$stm = $DBH->prepare("UPDATE imas_libraries SET name=:name,lastmoddate=:lastmod WHERE id=:id");
+				$stm->execute(array(':name'=>$lib['n'],
+					':lastmod'=>$pullstatus['pulltime'],
+					':id'=>$localid[$lib['uid']]));
+				echo "changing name for ".$localid[$lib['uid']].'<Br/>';
+			}
+			if (isset($_POST['chgdel'.$lib['uid']])) {
+				$stm = $DBH->prepare("UPDATE imas_libraries SET deleted=:deleted,lastmoddate=:lastmod WHERE id=:id");
+				$stm->execute(array(':deleted'=>$lib['d'],
+					':lastmod'=>$pullstatus['pulltime'],
+					':id'=>$localid[$lib['uid']]));
+				
+				//also delete library items if deleting
+				if ($lib['d']==1) {
+					$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:lastmod WHERE libid=:id");
+					$stm->execute(array(':lastmod'=>$pullstatus['pulltime'],
+						':id'=>$localid[$lib['uid']]));
+				}
+				echo "changing delete for ".$localid[$lib['uid']].'<Br/>';
+			}
+			if (isset($_POST['chgparent'.$lib['uid']])) {
+				$stm = $DBH->prepare("UPDATE imas_libraries SET parent=:parent,lastmoddate=:lastmod WHERE id=:id");
+				$stm->execute(array(':parent'=>$localid[$lib['p']],
+					':lastmod'=>$pullstatus['pulltime'],
+					':id'=>$localid[$lib['uid']]));
+				echo "changing parent for ".$localid[$lib['uid']].'<Br/>';
+			}
+				
+		}
+	}
 
-		$done = false;
-		$autocontinue = true;
+	//update step number and redirect to start step 1
+	$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=1,record=:record WHERE id=:id");
+	$stm->execute(array(':record'=>json_encode($record), ':id'=>$pullstatus['id']));
+
+	$done = false;
+	$autocontinue = true;
 
 } else if ($pullstatus['step']==1 && !isset($_POST['record'])) {
 	//pull step 1 from remote
@@ -385,7 +451,12 @@ if (!$continuing) {  //start a fresh pull
 	} else {
 		$offset = 0;
 	}
-	$data = file_get_contents($peerinfo['url'].'/admin/federationapi.php?peer='.$mypeername'&since='.$since.'&stage=1&offset='.$offset, false, $streamopts);
+	$getdata = http_build_query( array(
+		'peer'=>$mypeername,
+		'since'=>$since,
+		'stage'=>1,
+		'offset'=>$offset));
+	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata, false, $streamopts);
 
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$pullstatus['pulltime'].'_1.json', 'public');
@@ -394,7 +465,7 @@ if (!$continuing) {  //start a fresh pull
 	if ($parsed===NULL) {
 		echo 'Invalid data received';
 		exit;
-	} else if ($parsed['stage']!=0) {
+	} else if ($parsed['stage']!=1) {
 		echo 'Wrong data stage sent';
 		exit;
 	}
@@ -411,6 +482,7 @@ if (!$continuing) {  //start a fresh pull
 	//do interactive confirmation
 
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
+	require("../header.php");
 	print_header();
 
 	echo '<h2>Updating Questions Batch</h2>';
@@ -425,7 +497,7 @@ if (!$continuing) {  //start a fresh pull
 			$quidref[$q['uniqueid']] = $i;
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i];
+			unset($data['data'][$i]);
 		}
 	}
 	if (count($quids)==0) {
@@ -445,6 +517,7 @@ if (!$continuing) {  //start a fresh pull
 		$query .= "JOIN imas_questionset AS iq ON ili.qsetid=iq.id ";
 		$query .= "WHERE iq.uniqueid IN ($placeholders)";
 		$stm = $DBH->prepare($query);
+		$stm->execute($quids);
 		$qlibs= array();
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			if (!isset($qlibs[$row['qsetid']])) {
@@ -508,7 +581,7 @@ if (!$continuing) {  //start a fresh pull
 					$libhtml .= '<li>';
 					$libhtml = 'New library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'.';
 					//value is localqsetid:locallibid
-					$libhtml .= '<input type="checkbox" name="addli[]" value="'.$row['id'].':'.$libdata[$rlib['ulibid']]['id'].':'.$rlib['lastmoddate'].'" checked> Add it</li>';
+					$libhtml .= '<input type="checkbox" name="addli[]" value="'.$local['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</li>';
 					$livesinalib = true;
 				}
 			}
@@ -517,42 +590,57 @@ if (!$continuing) {  //start a fresh pull
 				//is in. No point asking about questions where we didn't bring in the library
 				continue;
 			}
-
-			echo '<h4><b>Question '.$local['id'].'</b>. ';
-			echo '<input type="hidden" name="uidref'.$local['uniqueid'].'" value="'.$local['id'].'" />';
-			if ($local['lastmoddate']<$since) {
-				//it's been updated remotely but not locally
-				echo '<span style="color: #ff6600;">Changed Remotely - no local conflict</span>';
-			} else {
-				//it's been updated both remotely and locally - potential conflict
-				echo '<span style="color: #ff0000;">Changed Remotely and Locally - potential conflict</span>';
-			}
-			echo '</h4>';
+			$chghtml = '';
 			if ($remote['deleted']==1 && $local['deleted']==0) {
-				echo '<p>Deleted remotely, not deleted locally.  ';
-				echo '<input type="checkbox" name="deleteq-'.$local['uniqueid'].'" value="1"> Delete locally </p>';
+				$chghtml .= '<p>Deleted remotely, not deleted locally.  ';
+				$chghtml .= '<input type="checkbox" name="deleteq-'.$local['uniqueid'].'" value="1"> Delete locally </p>';
 			} else if ($remote['deleted']==0 && $local['deleted']==1) {
-				echo '<p>Not deleted remotely, deleted locally.  ';
-				echo '<input type="checkbox" name="undeleteq-'.$local['uniqueid'].'" value="1" checked> Un-delete locally and update</p>';
-				echo '<p>Library assignments, if undeleted:<ul>'.$libhtml.'</ul></p>';
+				$chghtml .= '<p>Not deleted remotely, deleted locally.  ';
+				$chghtml .= '<input type="checkbox" name="undeleteq-'.$local['uniqueid'].'" value="1" checked> Un-delete locally and update</p>';
+				$chghtml .= '<p>Library assignments, if undeleted:<ul>'.$libhtml.'</ul></p>';
 			} else {
 				//show changes to most fields
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
 					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
 				foreach ($fields as $field) {
 					if ($remote[$field]!=$local[$field]) {
-						echo '<p>'.ucwords($field). ' changed. ';
-						echo '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
-						echo '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
-						echo '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local['description'])).'</td>';
-						echo '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote['description'])).'</td></tr></table>';
+						$chghtml .= '<p>'.ucwords($field). ' changed. ';
+						$chghtml .= '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
+						$chghtml .= '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
+						$chghtml .= '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local[$field])).'</td>';
+						$chghtml .= '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote[$field])).'</td></tr></table>';
 					}
 				}
 				//TODO:  Figure a way to handle replaceby
 				//plan: Update qimages if control is updated
 				//TODO: figure out how to tell if qimages are changed
-				echo '<p>Library assignments:<ul>'.$libhtml.'</ul></p>';
+				if ($libhtml!='') {
+					$chghtml .= '<p>Library assignments:<ul>'.$libhtml.'</ul></p>';
+				}
 			}
+			if ($chghtml == '') {
+				//no changes at all - don't display anything
+				continue;
+			}
+
+			echo '<h4><b>Question '.$local['id'].'</b>. '.Sanitize::encodeStringForDisplay($local['description']);
+			echo '<input type="hidden" name="uidref'.$local['uniqueid'].'" value="'.$local['id'].'" />';
+			echo '</h4>';
+			echo '<p>';
+			if ($local['lastmoddate']<$since) {
+				//it's been updated remotely but not locally
+				echo '<span style="color: #ff6600;">Changed Remotely - no local conflict</span>';
+			} else if ($local['lastmoddate']==$local['adddate']) {
+				//it's been updated both remotely and locally since $since - potential conflict
+				//but adddate=lastmoddate implying it was imported
+				echo '<span style="color: #ff0000;">Changed Remotely and Imported Locally - potential conflict</span>';
+			} else {
+				//it's been updated both remotely and locally - potential conflict
+				echo '<span style="color: #ff0000;">Changed Remotely and Locally - potential conflict</span>';
+				echo '. Local: '.tzdate('Y-m-d',$local['lastmoddate']).', Remote: '.tzdate('Y-m-d',$remote['lastmoddate']);
+			}
+			echo '</p>';
+			echo $chghtml;
 		}
 
 		//handle any new questions
@@ -581,7 +669,7 @@ if (!$continuing) {  //start a fresh pull
 				//is in. No point asking about questions where we didn't bring in the library
 				continue;
 			}
-			echo '<h4><b>Question UID '.$remote['uniqueid'].'</b>. ';
+			echo '<h4><b>Question UID '.$remote['uniqueid'].'</b>.</h4> ';
 			echo '<p>Description: '.Sanitize::encodeStringForDisplay($remote['description']).'</p>';
 			echo '<p><input type="checkbox" name="addnewq-'.$remote['uniqueid'].'" value="1" checked> Add Question.</p>';
 			echo '<p>Library assignments: <ul>'.$libhtml.'</ul></p>';
@@ -598,9 +686,9 @@ if (!$continuing) {  //start a fresh pull
 	//and autocontinue to step 3
 	//if not, update nextoffset record and reset step to 1 before autocontinue
 
-	$record['step1-'.$record['stage1offset']] = $_POST;
+	//$record['step1-'.$record['stage1offset']] = $_POST;
 
-	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
+	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
 
 	$quids = array();
 	$quidref = array();
@@ -611,7 +699,7 @@ if (!$continuing) {  //start a fresh pull
 			$quidref[$q['uniqueid']] = $i;
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i];
+			unset($data['data'][$i]);
 		}
 	}
 
@@ -627,6 +715,7 @@ if (!$continuing) {  //start a fresh pull
 
 	//DO WORK
 	//loop over questions
+
 	foreach ($quids as $quid) {
 		if (isset($_POST['uidref'.$quid])) {
 			$localqidref[$quid] = Sanitize::onlyInt($_POST['uidref'.$quid]);
@@ -634,16 +723,20 @@ if (!$continuing) {  //start a fresh pull
 		$remote = $data['data'][$quidref[$quid]];
 		if (isset($_POST['deleteq-'.$quid])) {
 			//  if isset deleteq-uniqueid then set as deleted
-			$delq->execute(array(':lastmoddate'=>$remote['lastmoddate'], ':id'=>$localqidref[$quid]));
-			$delli_by_qid->execute(array(':lastmoddate'=>$remote['lastmoddate'], ':id'=>$localqidref[$quid]));
+			$delq->execute(array(':lastmoddate'=>$pullstatus['pulltime'], ':id'=>$localqidref[$quid]));
+			$delli_by_qid->execute(array(':lastmoddate'=>$pullstatus['pulltime'], ':id'=>$localqidref[$quid]));
+			//echo "Deleting $quid<br/>";
 		} else if (isset($_POST['addnewq-'.$quid])) {
 			//  if isset addnewq-uniqueid then Insert
 			$vals = array();
 			foreach ($qallfields as $field) {
 				$vals[':'.$field] = $remote[$field];
 			}
+			$vals[':adddate'] = $pullstatus['pulltime'];
+			$vals[':lastmoddate'] = $pullstatus['pulltime'];
 			$vals[':ownerid'] = $userid;
 			$addq->execute($vals);
+			//echo "Adding $quid<br/>";
 			$localqidref[$quid] = $DBH->lastInsertId();
 		} else {
 			// if isset undeleteq-uniqueid then update all
@@ -668,11 +761,12 @@ if (!$continuing) {  //start a fresh pull
 				//            to prevent sending back to source peer, in federatedapi
 				//						we need to look for _pulls for the peer, look at all the pulltime
 				//						records, and skip them.
-				$vals[":lastmoddate"] = $remote["lastmoddate"];
+				$vals[":lastmoddate"] = $pullstatus['pulltime'];
 				$sets = implode(',', $chgs);
 				$vals[':id'] = $localqidref[$quid];
 				$stm = $DBH->prepare("UPDATE imas_questionset SET $sets WHERE id=:id");
 				$stm->execute($vals);
+				//echo "Updating $quid<br/>";
 				if (isset($_POST['updatecontrol-'.$quid]) && count($remote['imgs'])>0) {
 					//TODO:  update imas_qimages
 					//lazy - should do better
@@ -691,44 +785,56 @@ if (!$continuing) {  //start a fresh pull
 	$now = time();
 
 	$livals = array();
-	foreach ($_POST['addnewqli'] as $liinfo) {
-		//loop over addnewqli and resolve uniqueid:locallibid to localqid:locallibid
-		$liparts = explode(':', $liinfo);
-		if (!isset($localqidref[$liinfo[0]])) {
-			//don't have a local id - skip it
-			continue;
+	if (isset($_POST['addnewqli'])) {
+		foreach ($_POST['addnewqli'] as $liinfo) {
+			//loop over addnewqli and resolve uniqueid:locallibid to localqid:locallibid
+			$liparts = explode(':', $liinfo);
+			if (!isset($localqidref[$liparts[0]])) {
+				//don't have a local id - skip it
+				continue;
+			}
+			//echo "Adding new lib item for new q<br/>";
+			array_push($livals, $localqidref[$liparts[0]], $liparts[1], $userid, $pullstatus['pulltime']);
 		}
-		array_push($livals, $localqidref[$liinfo[0]], $liinfo[1], $userid, $pullstatus['pulltime']);
 	}
-	foreach ($_POST['addli'] as $liinfo) {
-		//loop over addli and add localqid:locallibid
-		$liparts = explode(':', $liinfo);
-		array_push($livals, $liinfo[0], $liinfo[1], $userid, $pullstatus['pulltime']);
+	if (isset($_POST['addli'])) {
+		foreach ($_POST['addli'] as $liinfo) {
+			//loop over addli and add localqid:locallibid
+			$liparts = explode(':', $liinfo);
+			array_push($livals, $liparts[0], $liparts[1], $userid, $pullstatus['pulltime']);
+			//echo "Adding new lib item for existing q<br/>";
+		}
 	}
 	//add new li if any
 	if (count($livals)>0) {
-		$placeholders = Sanitize::generateQueryPlaceholdersGrouped($livals,3);
+		$placeholders = Sanitize::generateQueryPlaceholdersGrouped($livals,4);
 		$stm = $DBH->prepare("INSERT INTO imas_library_items (qsetid,libid,ownerid,lastmoddate) VALUES $placeholders");
 		$stm->execute($livals);
 	}
 
 	//loop over undeleteli, deleteli, unjunkli, junkli and make the change
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['undeleteli']);
-	$stm->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['undeleteli']));
-
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['deleteli']);
-	$stm->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['deleteli']));
-
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['unjunkli']);
-	$stm->prepare("UPDATE imas_library_items SET junkflag=0,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['unjunkli']));
-
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['junkli']);
-	$stm->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
-
+	if (count($_POST['undeleteli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['undeleteli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['undeleteli']));
+	}
+	if (count($_POST['deleteli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['deleteli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['deleteli']));
+	}
+	if (count($_POST['unjunkli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['unjunkli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET junkflag=0,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['unjunkli']));
+	}
+	if (count($_POST['junkli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['junkli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
+	}
+	
+	
 	if ($_POST['nextoffset']==-1) {
 		//done with questions//update step number and redirect to start step 3
 		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=3,record=:record WHERE id=:id");
@@ -744,7 +850,11 @@ if (!$continuing) {  //start a fresh pull
 
 } else if ($pullstatus['step']==3 && !isset($_POST['record'])) {
 	//pull step 3 from remote (changed libs, unchanged q's)
-	$data = file_get_contents($peerinfo['url'].'/admin/federationapi.php?peer='.$mypeername'&since='.$since.'&stage=1&offset='.$offset, false, $streamopts);
+	$getdata = http_build_query( array(
+		'peer'=>$mypeername,
+		'since'=>$since,
+		'stage'=>3));
+	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata, false, $streamopts);
 
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$pullstatus['pulltime'].'_3.json', 'public');
@@ -753,7 +863,7 @@ if (!$continuing) {  //start a fresh pull
 	if ($parsed===NULL) {
 		echo 'Invalid data received';
 		exit;
-	} else if ($parsed['stage']!=0) {
+	} else if ($parsed['stage']!=3) {
 		echo 'Wrong data stage sent';
 		exit;
 	}
@@ -770,6 +880,7 @@ if (!$continuing) {  //start a fresh pull
 	//do interactive confirmation
 
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
+	require("../header.php");
 	print_header();
 
 	//pull library names and local ids
@@ -788,113 +899,132 @@ if (!$continuing) {  //start a fresh pull
 			$qlookups[] = $rli['uniqueid'];
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i];
+			unset($data['data'][$i]);
 		}
 	}
-
-	$ph = Sanitize::generateQueryPlaceholders($qlookups);
-	$stm = $DBH->query("SELECT uniqueid,id,name FROM imas_questionset WHERE uniqueid IN ($ph)");
-	$qdata = array();
-	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
-		$qdata[$row['uniqueid']] = array('id'=>$row['id'], 'name'=>$row['name']);
-	}
-
-	$ph = Sanitize::generateQueryPlaceholdersGrouped($lookups,2);
-	$query = "SELECT ili.id,il.uniqueid AS ulid,iq.uniqueid AS uqid,ili.lastmoddate,ili.junkflag,ili.deleted ";
-	$query .= "imas_library_items AS ili ";
-	$query .= "JOIN imas_libraries AS il ON il.id=ili.libid ";
-	$query .= "JOIN imas_questionset AS iq ON iq.id=ili.qsetid ";
-	$query .= "WHERE (il.uniqueid,iq.uniqueid) IN ($ph)";
-	$stm = $DBH->prepare($query);
-	$stm->execute($lookups);
-	$llib = array();
-	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
-		$llis[$row['ulid'].'-'.$row['uqid']] = $row;
-	}
-	foreach ($data['data'] AS $i=>$rlib) {
-		if (isset($llis[$rlib['ulibid'].'-'.$rlib['uniqueid']])) {
-			//lib item exists locally
-			$llib = $llis[$rlib['ulibid'].'-'.$rlib['uniqueid']];
-			if ($rlib['lastmoddate']<$since) {
-				//since already on our system, and hasn't been updated since last pull, skip this part
-				continue;
-			}
-			if ($llib['deleted']==1 && $rlib['deleted']==0) {
-				echo '<p>Library: '.Sanitize::encodeStringForDisplay($llib['name']).'. ';
-				echo 'Question: '.Sanitize::encodeStringForDisplay($llib['description']).'. ';
-				echo 'Not deleted remotely, deleted locally. ';
-				echo '<input type="checkbox" name="undeleteli[]" value="'.$llib['id'].'" checked> Un-delete locally and update</p>';
-			} else if ($llib['deleted']==0 && $rlib['deleted']==1) {
-				echo '<p>Library: '.Sanitize::encodeStringForDisplay($llib['name']).'. ';
-				echo 'Question: '.Sanitize::encodeStringForDisplay($llib['description']).'. ';
-				echo 'Deleted remotely, not deleted locally. ';
-				echo '<input type="checkbox" name="deleteli[]" value="'.$llib['id'].'"> Delete locally </p>';
-			} else if ($llib['junkflag']==1 && $rlib['junkflag']==0) {
-				echo '<p>Library: '.Sanitize::encodeStringForDisplay($llib['name']).'. ';
-				echo 'Question: '.Sanitize::encodeStringForDisplay($llib['description']).'. ';
-				echo 'Marked OK remotely, Marked as wrong lib locally. ';
-				echo '<input type="checkbox" name="unjunkli[]" value="'.$llib['id'].'" checked> Un-mark as wrong lib</p>';
-			} else if ($llib['junkflag']==0 && $rlib['junkflag']==1) {
-				echo '<p>Library: '.Sanitize::encodeStringForDisplay($llib['name']).'. ';
-				echo 'Question: '.Sanitize::encodeStringForDisplay($llib['description']).'. ';
-				echo 'Marked as wrong lib remotely, marked OK locally. ';
-				echo '<input type="checkbox" name="junkli[]" value="'.$llib['id'].'" checked> Mark as wrong lib </p>';
-			}
-		} else if (isset($libdata[$rlib['ulibid']]) && isset($qdata[$rlib['uniqueid']]) && $rlib['deleted']==0 && $rlib['junkflag']==0) {
-			//new lib item and lib and q already exist
-			echo '<p>New library assignment. ';
-			echo 'Library: '.Sanitize::encodeStringForDisplay($llib['name']).'. ';
-			echo 'Question: '.Sanitize::encodeStringForDisplay($llib['description']).'. ';
-			echo '<input type="checkbox" name="addli[]" value="'.$qdata[$rlib['uniqueid']]['id'].':'.$libdata[$rlib['ulibid']]['id'].':'.$rlib['lastmoddate'].'" checked> Add it</p>';
+	if (count($data['data'][$i])==0) {
+		echo '<p>No Changes to Make</p>';
+		echo '<input type="submit" name="record" value="Finish"/>';
+	} else {
+	
+		$ph = Sanitize::generateQueryPlaceholders($qlookups);
+		$stm = $DBH->prepare("SELECT uniqueid,id,description FROM imas_questionset WHERE uniqueid IN ($ph)");
+		$stm->execute($qlookups);
+		$qdata = array();
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$qdata[$row['uniqueid']] = array('id'=>$row['id'], 'description'=>$row['description']);
 		}
+	
+		$ph = Sanitize::generateQueryPlaceholdersGrouped($lookups,2);
+		$query = "SELECT ili.id,il.uniqueid AS ulid,iq.uniqueid AS uqid,ili.lastmoddate,ili.junkflag,ili.deleted,iq.deleted as qdel ";
+		$query .= "FROM imas_library_items AS ili ";
+		$query .= "JOIN imas_libraries AS il ON il.id=ili.libid ";
+		$query .= "JOIN imas_questionset AS iq ON iq.id=ili.qsetid ";
+		$query .= "WHERE (il.uniqueid,iq.uniqueid) IN ($ph)";
+		$stm = $DBH->prepare($query);
+		$stm->execute($lookups);
+		$llib = array();
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$llis[$row['ulid'].'-'.$row['uqid']] = $row;
+		}
+		foreach ($data['data'] AS $i=>$rlib) {
+			if (isset($llis[$rlib['ulibid'].'-'.$rlib['uniqueid']])) {
+				//lib item exists locally
+				$llib = $llis[$rlib['ulibid'].'-'.$rlib['uniqueid']];
+				//only included if lastmoddate>since, so no need to check
+				/*if ($rlib['lastmoddate']<$since) {
+					//since already on our system, and hasn't been updated since last pull, skip this part
+					continue;
+				}*/
+				if ($llib['qdel']==1) { //question is deleted locally - skip lib item stuff
+					continue;
+				}
+				if ($llib['deleted']==1 && $rlib['deleted']==0) {
+					echo '<p>Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+					echo 'Question: '.Sanitize::encodeStringForDisplay($qdata[$rlib['uniqueid']]['description']).'. ';
+					echo 'Not deleted remotely, deleted locally. ';
+					echo '<input type="checkbox" name="undeleteli[]" value="'.$llib['id'].'" checked> Un-delete locally and update</p>';
+				} else if ($llib['deleted']==0 && $rlib['deleted']==1) {
+					echo '<p>Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+					echo 'Question: '.Sanitize::encodeStringForDisplay($qdata[$rlib['uniqueid']]['description']).'. ';
+					echo 'Deleted remotely, not deleted locally. ';
+					echo '<input type="checkbox" name="deleteli[]" value="'.$llib['id'].'"> Delete locally </p>';
+				}
+				if ($llib['junkflag']==1 && $rlib['junkflag']==0) {
+					echo '<p>Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+					echo 'Question: '.Sanitize::encodeStringForDisplay($qdata[$rlib['uniqueid']]['description']).'. ';
+					echo 'Marked OK remotely, Marked as wrong lib locally. ';
+					echo '<input type="checkbox" name="unjunkli[]" value="'.$llib['id'].'" checked> Un-mark as wrong lib</p>';
+				} else if ($llib['junkflag']==0 && $rlib['junkflag']==1) {
+					echo '<p>Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+					echo 'Question: '.Sanitize::encodeStringForDisplay($qdata[$rlib['uniqueid']]['description']).'. ';
+					echo 'Marked as wrong lib remotely, marked OK locally. ';
+					echo '<input type="checkbox" name="junkli[]" value="'.$llib['id'].'" checked> Mark as wrong lib </p>';
+				}
+			} else if (isset($libdata[$rlib['ulibid']]) && isset($qdata[$rlib['uniqueid']]) && $rlib['deleted']==0 && $rlib['junkflag']==0) {
+				//new lib item and lib and q already exist
+				echo '<p>New library assignment. ';
+				echo 'Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
+				echo 'Question: '.Sanitize::encodeStringForDisplay($qdata[$rlib['uniqueid']]['description']).'. ';
+				echo '<input type="checkbox" name="addli[]" value="'.$qdata[$rlib['uniqueid']]['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</p>';
+			}
+		}
+		echo '<input type="submit" name="record" value="Record"/>';
 	}
-	echo '<input type="submit" name="record" value="Record"/>';
 
 	$done = false;
 	$autocontinue = false;
 
 } else if ($pullstatus['step']==4 && isset($_POST['record'])) {
 	//record results from interactive.
-	$record['step4']] = $_POST;
-	$data = json_decode(file_get_contents(getfopenloc($pullstatus['url'])), true);
+	//$record['step4']] = $_POST;
+	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
 
 	foreach ($data['data'] AS $i=>$rli) {
 		if (ctype_digit($rli['uniqueid']) && ctype_digit($rli['ulibid'])) {
 
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i];
+			unset($data['data'][$i]);
 		}
 	}
 
 	$livals = array();
-	foreach ($_POST['addli'] as $liinfo) {
-		//loop over addli and add localqid:locallibid
-		$liparts = explode(':', $liinfo);
-		array_push($livals, $liinfo[0], $liinfo[1], $userid, $pullstatus['pulltime']);
+	if (isset($_POST['addli'])) {
+		foreach ($_POST['addli'] as $liinfo) {
+			//loop over addli and add localqid:locallibid
+			$liparts = explode(':', $liinfo);
+			array_push($livals, $liparts[0], $liparts[1], $userid, $pullstatus['pulltime']);
+		}
 	}
 	//add new li if any
 	if (count($livals)>0) {
-		$placeholders = Sanitize::generateQueryPlaceholdersGrouped($livals,3);
+		$placeholders = Sanitize::generateQueryPlaceholdersGrouped($livals,4);
 		$stm = $DBH->prepare("INSERT INTO imas_library_items (qsetid,libid,ownerid,lastmoddate) VALUES $placeholders");
 		$stm->execute($livals);
 	}
 	//loop over undeleteli, deleteli, unjunkli, junkli and make the change
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['undeleteli']);
-	$stm->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['undeleteli']));
-
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['deleteli']);
-	$stm->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['deleteli']));
-
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['unjunkli']);
-	$stm->prepare("UPDATE imas_library_items SET junkflag=0,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['unjunkli']));
-
-	$placeholders = Sanitize::generateQueryPlaceholders($_POST['junkli']);
-	$stm->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
-	$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
+	if (count($_POST['undeleteli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['undeleteli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=0,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['undeleteli']));
+	}
+	if (count($_POST['deleteli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['deleteli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['deleteli']));
+	}
+	if (count($_POST['unjunkli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['unjunkli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET junkflag=0,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['unjunkli']));
+	}
+	if (count($_POST['junkli'])>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($_POST['junkli']);
+		$stm = $DBH->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
+		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
+	}
+	
 
 	//all done.  Record we're done
 	$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=99,record=:record WHERE id=:id");
@@ -908,6 +1038,7 @@ if ($autocontinue) {
 	header('Location: ' . $GLOBALS['basesiteurl'] . "/admin/federationpull.php?peer=".Sanitize::encodeUrlParam($peer));
 	exit;
 } else if ($done) {
+	require("../header.php");
 	print_header();
 	echo '<p>Done!</p>';
 	echo '<p><a href="admin2.php">Back to Admin Page</a></p>';

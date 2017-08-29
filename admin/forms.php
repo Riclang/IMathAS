@@ -838,8 +838,9 @@ switch($_GET['action']) {
 			echo "</tr>\n";
 		}
 		echo "</table>\n";
-		echo "<form method=post action=\"actions.php?action=modfedpeers&id=new\">\n";
+		echo "<form method=post action=\"actions.php?id=new\">\n";
 		echo "<p>Add new federation peer: <br/>";
+		echo '<input type="hidden" name="action" value="modfedpeers" />';
 		echo "Install Name: <input type=text name=\"peername\" size=20><br/>\n";
 		echo "Description: <input type=text name=\"peerdescription\" size=50><br/>\n";
 		echo "Root URL: <input type=text name=\"url\" size=50><br/>\n";
@@ -858,8 +859,9 @@ switch($_GET['action']) {
 		$stm = $DBH->prepare("SELECT id,peername,peerdescription,url,secret,lastpull FROM imas_federation_peers WHERE id=:id");
 		$stm->execute(array(':id'=>$_GET['id']));
 		$row = $stm->fetch(PDO::FETCH_ASSOC);
-		echo "<form method=post action=\"actions.php?action=modfedpeers&id={$row['id']}\">\n";
+		echo "<form method=post action=\"actions.php?id={$row['id']}\">\n";
 		echo "Modify federation peer: <br/>";
+		echo '<input type="hidden" name="action" value="modfedpeers" />';
 		echo "Install Name: <input type=text name=\"peername\" value=\"{$row['peername']}\" size=20><br/>\n";
 		echo "Description: <input type=text name=\"peerdescription\" value=\"{$row['peerdescription']}\" size=50><br/>\n";
 		echo "Root URL: <input type=text name=\"url\" value=\"{$row['url']}\" size=50><br/>\n";

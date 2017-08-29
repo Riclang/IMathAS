@@ -2,27 +2,27 @@
 //IMathAS:  Federated libraries update send
 //(c) 2017 David Lippman
 
-exit; //not ready for use yet.
+//exit; //not ready for use yet.
 
-if (empty($_GET['peer']) || empty($_GET['since']) || !isset($_SERVER['HTTP_AUTHORIZATON'])) {
-//	exit;
+if (empty($_GET['peer']) || empty($_GET['since']) || !isset($_SERVER['HTTP_AUTHORIZATION'])) {
+	exit;
 }
+
 $since = intval($_GET['since']);
 require("../init_without_validate.php");
 require("../includes/filehandler.php");
-/*
+
 $stm = $DBH->prepare("SELECT id,secret FROM imas_federation_peers WHERE peername=:peername");
-if (!$stm->execute(array(':peername'=>$_GET['peer']))) {
+$stm->execute(array(':peername'=>$_GET['peer']));
+if ($stm->rowCount()==0) {
 	echo '{error:"Unknown peer"}';
-	exit;
 }
 $peer = $stm->fetch(PDO::FETCH_ASSOC);
 
-if ($peer['secret'] != $_SERVER['HTTP_AUTHORIZATON']) {
+if ($peer['secret'] != $_SERVER['HTTP_AUTHORIZATION']) {
 	echo '{error:"Invalid authorization"}';
-	exit;
 }
-*/
+
 
 $stm = $DBH->prepare("SELECT pulltime FROM imas_federation_pulls WHERE peerid=:peerid");
 $stm->execute(array(":peerid"=>$peer['id']));
@@ -30,7 +30,9 @@ $toskip = array();
 while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 	$toskip[] = $row['pulltime'];
 }
-$skipph = Sanitize::generateQueryPlaceholders($toskip);
+if (count($toskip)>0) {
+	$skipph = Sanitize::generateQueryPlaceholders($toskip);
+}
 
 if (isset($_GET['stage'])) {
 	$stage = intval($_GET['stage']);
@@ -45,7 +47,7 @@ if ($stage == 0) { //send updated libraries
 	if (count($toskip)>0) {
 		$query .= "AND A.lastmoddate NOT IN ($skipph)";
 		$stm = $DBH->prepare($query);
-		$stm->execute(array_merge(array($since),$toskip)));
+		$stm->execute(array_merge(array($since),$toskip));
 	} else {
 		$stm = $DBH->prepare($query);
 		$stm->execute(array($since));
@@ -87,7 +89,7 @@ if ($stage == 0) { //send updated libraries
 
 	if (count($toskip)>0) {
 		$stm = $DBH->prepare($query);
-		$stm->execute(array_merge(array($since),$toskip)));
+		$stm->execute(array_merge(array($since),$toskip));
 	} else {
 		$stm = $DBH->prepare($query);
 		$stm->execute(array($since));
@@ -97,7 +99,7 @@ if ($stage == 0) { //send updated libraries
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		$linecnt++;
 		if ($row['id']==$lastq) { //same question, different libid
-			$qinfo[$qcnt]['libs'][] = array('l'=>$row['ulibid'], 'j'=>$row['junkflag'], 'd'=>$row['libdel']);
+			$qinfo[$qcnt]['libs'][] = array('ulibid'=>$row['ulibid'], 'junkflag'=>$row['junkflag'], 'deleted'=>$row['libdel']);
 		} else { //new question
 			//we need to stop before the full offset to ensure all the library entries
 			//for a question are sent with the question
@@ -136,7 +138,7 @@ if ($stage == 0) { //send updated libraries
 	$stm = $DBH->prepare($query);
 	if (count($toskip)>0) {
 		$stm = $DBH->prepare($query);
-		$stm->execute(array_merge(array($since,$since),$toskip)));
+		$stm->execute(array_merge(array($since,$since),$toskip));
 	} else {
 		$stm = $DBH->prepare($query);
 		$stm->execute(array($since,$since));
