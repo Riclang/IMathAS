@@ -44,7 +44,7 @@ $streamopts = stream_context_create(array(
 //see if we have a pull to continue
 $stm = $DBH->prepare('SELECT id,pulltime,step,fileurl,record FROM imas_federation_pulls WHERE step<10 AND peerid=:id ORDER BY pulltime DESC LIMIT 1');
 $res = $stm->execute(array(':id'=>$peer));
-if ($stm->rowCount()==0) {
+if ($stm->rowCount()==0 || $_GET['stage']==-1) {
 	$continuing = false;
 } else {
 	$continuing = true;
@@ -57,7 +57,7 @@ $now = time();
 
 if (!$continuing) {  //start a fresh pull
 	//look up our last successful pull to them
-	$stm = $DBH->prepare('SELECT pulltime FROM imas_federation_pulls WHERE peerid=:id ORDER BY pulltime DESC LIMIT 1');
+	$stm = $DBH->prepare('SELECT pulltime FROM imas_federation_pulls WHERE peerid=:id AND step=99 ORDER BY pulltime DESC LIMIT 1');
 	$res = $stm->execute(array(':id'=>$peer));
 	if ($stm->rowCount()==0) {
 		$since = 0;
@@ -416,7 +416,7 @@ if (!$continuing) {  //start a fresh pull
 				$stm->execute(array(':deleted'=>$lib['d'],
 					':lastmod'=>$pullstatus['pulltime'],
 					':id'=>$localid[$lib['uid']]));
-				
+
 				//also delete library items if deleting
 				if ($lib['d']==1) {
 					$stm = $DBH->prepare("UPDATE imas_library_items SET deleted=1,lastmoddate=:lastmod WHERE libid=:id");
@@ -432,7 +432,7 @@ if (!$continuing) {  //start a fresh pull
 					':id'=>$localid[$lib['uid']]));
 				echo "changing parent for ".$localid[$lib['uid']].'<Br/>';
 			}
-				
+
 		}
 	}
 
@@ -833,8 +833,8 @@ if (!$continuing) {  //start a fresh pull
 		$stm = $DBH->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
 		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
 	}
-	
-	
+
+
 	if ($_POST['nextoffset']==-1) {
 		//done with questions//update step number and redirect to start step 3
 		$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=3,record=:record WHERE id=:id");
@@ -906,7 +906,7 @@ if (!$continuing) {  //start a fresh pull
 		echo '<p>No Changes to Make</p>';
 		echo '<input type="submit" name="record" value="Finish"/>';
 	} else {
-	
+
 		$ph = Sanitize::generateQueryPlaceholders($qlookups);
 		$stm = $DBH->prepare("SELECT uniqueid,id,description FROM imas_questionset WHERE uniqueid IN ($ph)");
 		$stm->execute($qlookups);
@@ -914,7 +914,7 @@ if (!$continuing) {  //start a fresh pull
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			$qdata[$row['uniqueid']] = array('id'=>$row['id'], 'description'=>$row['description']);
 		}
-	
+
 		$ph = Sanitize::generateQueryPlaceholdersGrouped($lookups,2);
 		$query = "SELECT ili.id,il.uniqueid AS ulid,iq.uniqueid AS uqid,ili.lastmoddate,ili.junkflag,ili.deleted,iq.deleted as qdel ";
 		$query .= "FROM imas_library_items AS ili ";
@@ -1024,7 +1024,7 @@ if (!$continuing) {  //start a fresh pull
 		$stm = $DBH->prepare("UPDATE imas_library_items SET junkflag=1,lastmoddate=? WHERE id IN ($placeholders)");
 		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
 	}
-	
+
 
 	//all done.  Record we're done
 	$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=99,record=:record WHERE id=:id");

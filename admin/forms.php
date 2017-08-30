@@ -824,17 +824,27 @@ switch($_GET['action']) {
 		echo '<div id="headerforms" class="pagetitle">';
 		echo "<h3>View Federation Peers</h3>\n";
 		echo '</div>';
-		echo "<table><tr><th>Name</th><th>Description</th><th>Their Last Pull</th><th>Our Last Pull</th><th>Modify</th><th>Delete</th></tr>\n";
+		echo "<table><tr><th>Name</th><th>Description</th><th>Their Last Pull</th><th>Our Last Pull</th><th>Modify</th><th>Delete</th><th>Pull</th></tr>\n";
 
 		$query = "SELECT ifp.id,ifp.peername,ifp.peerdescription,ifp.lastpull,max(pulls.pulltime) as uspull FROM imas_federation_peers AS ifp ";
 		$query .= "LEFT JOIN imas_federation_pulls AS pulls ON ifp.id=pulls.peerid GROUP BY pulls.peerid";
+
+		$query = "SELECT ifp.*,pulls.pulltime AS uspull,pulls.step FROM imas_federation_peers AS ifp ";
+		$query .= "LEFT JOIN imas_federation_pulls as pulls ON ifp.id=pulls.peerid WHERE ";
+		$query .= "pulls.id=(SELECT id FROM imas_federation_pulls AS ifps WHERE ifps.peerid=ifp.id ORDER BY pulltime DESC LIMIT 1) ";
+		$query .= "OR pulls.id IS NULL";
 		$stm = $DBH->query($query);
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			echo "<tr><td>{$row['peername']}</td><td>{$row['peerdescription']}</td>";
 			echo '<td>'.($row['lastpull']>0?tzdate("n/j/y", $row['lastpull']):'Never').'</td>';
-			echo '<td>'.($row['uspull']===null?'Never':tzdate("n/j/y", $row['uspull'])).'</td>';
+			echo '<td>'.($row['uspull']===null?'Never':tzdate("n/j/y", $row['uspull']));
+			if ($row['uspull']!==null && $row['step']<99) {
+				echo '<br/>Incomplete. <a href="federationpull.php?peer='.Sanitize::onlyInt($row['id']).'">'._('Continue').'</a>.';
+			}
+			echo '</td>';
 			echo "<td><a href=\"forms.php?action=modfedpeers&id={$row['id']}\">Modify</a></td>\n";
 			echo "<td><a href=\"actions.php?action=delfedpeers&id={$row['id']}\" onclick=\"return confirm('Are you sure?');\">Delete</a></td>\n";
+			echo '<td><a href="federationpull.php?peer='.Sanitize::onlyInt($row['id']).'&stage=-1">'._('Start New Pull').'</a></td>';
 			echo "</tr>\n";
 		}
 		echo "</table>\n";

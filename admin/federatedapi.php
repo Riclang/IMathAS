@@ -16,11 +16,13 @@ $stm = $DBH->prepare("SELECT id,secret FROM imas_federation_peers WHERE peername
 $stm->execute(array(':peername'=>$_GET['peer']));
 if ($stm->rowCount()==0) {
 	echo '{error:"Unknown peer"}';
+	exit;
 }
 $peer = $stm->fetch(PDO::FETCH_ASSOC);
 
 if ($peer['secret'] != $_SERVER['HTTP_AUTHORIZATION']) {
 	echo '{error:"Invalid authorization"}';
+	exit;
 }
 
 
