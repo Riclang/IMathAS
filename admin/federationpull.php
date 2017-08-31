@@ -481,6 +481,20 @@ if (!$continuing) {  //start a fresh pull
 	//do interactive confirmation
 
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
+	$placeinhead .= '<script type="text/javascript">
+	function chkall(n) {
+		$(".Q"+n).prop("checked",true);
+	}
+	function chknone(n) {
+		$(".Q"+n).prop("checked",false);
+	}
+	function chkall2(n) {
+		$(".U"+n).prop("checked",true);
+	}
+	function chknone2(n) {
+		$(".U"+n).prop("checked",false);
+	}
+	</script>';
 	require("../header.php");
 	print_header();
 
@@ -567,7 +581,7 @@ if (!$continuing) {  //start a fresh pull
 					if ($llib['deleted']==1 && $rlib['deleted']==0) {
 						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
 						$libhtml .= 'Not deleted remotely, deleted locally. ';
-						$libhtml .= '<input type="checkbox" name="undeleteli[]" value="'.$llib['iliid'].'" checked> Un-delete locally and update</li>';
+						$libhtml .= '<input type="checkbox" class="Q'.$local['id'].'" name="undeleteli[]" value="'.$llib['iliid'].'" checked> Un-delete locally and update</li>';
 					} else if ($llib['deleted']==0 && $rlib['deleted']==1) {
 						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
 						$libhtml .= 'Deleted remotely, not deleted locally. ';
@@ -587,7 +601,7 @@ if (!$continuing) {  //start a fresh pull
 					$libhtml .= '<li>';
 					$libhtml = 'New library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'.';
 					//value is localqsetid:locallibid
-					$libhtml .= '<input type="checkbox" name="addli[]" value="'.$local['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</li>';
+					$libhtml .= '<input type="checkbox" class="Q'.$local['id'].'" name="addli[]" value="'.$local['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</li>';
 					$livesinalib = true;
 				}
 			}
@@ -603,15 +617,22 @@ if (!$continuing) {  //start a fresh pull
 				$chghtml .= '<input type="checkbox" name="deleteq-'.$local['uniqueid'].'" value="1"> Delete locally </p>';
 			} else if ($remote['deleted']==0 && $local['deleted']==1) {
 				$chghtml .= '<p>Not deleted remotely, deleted locally.  ';
-				$chghtml .= '<input type="checkbox" name="undeleteq-'.$local['uniqueid'].'" value="1" checked> Un-delete locally and update</p>';
+				$chghtml .= '<input type="checkbox" class="Q'.$local['id'].'" name="undeleteq-'.$local['uniqueid'].'" value="1" checked> Un-delete locally and update</p>';
 				$chghtml .= '<p>Library assignments, if undeleted:<ul>'.$libhtml.'</ul></p>';
 			} else {
 				//show changes to most fields
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
 					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
+				if ($remote['lastmoddate']>$local['lastmoddate']) {
+					$defchk = 'checked';
+				} else {
+					$defchk = '';
+				}
 				foreach ($fields as $field) {
-					$remote[$field] = str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay(trim($remote[$field])));
-					$local[$field] = str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay(trim($local[$field])));
+					$remote[$field] = preg_replace("/\s+\n/","\n",$remote[$field]);
+					$local[$field] = preg_replace("/\s+\n/","\n",$local[$field]);
+					$remote[$field] = str_replace(array("\r","\n"),array("",' <br/>'),Sanitize::encodeStringForDisplay(trim($remote[$field])));
+					$local[$field] = str_replace(array("\r","\n"),array("",' <br/>'),Sanitize::encodeStringForDisplay(trim($local[$field])));
 					if ($field=='ancestorauthors' && $remote[$field]=='') {
 						continue;
 					}
@@ -622,7 +643,7 @@ if (!$continuing) {  //start a fresh pull
 						}
 						$changedfields[] = $field;
 						$chghtml .= '<p>'.ucwords($field). ' changed. ';
-						$chghtml .= '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
+						$chghtml .= '<input type="checkbox" class="Q'.$local['id'].'" name="update'.$field.'-'.$local['uniqueid'].'" value="1" '.$defchk.'> Update it</p>';
 						$chghtml .= '<table class="gridded"><tr><td>';
 						//$chghtml .= $local[$field].'</td><td>'.$remote[$field].'</td><td>';
 						$chghtml .= htmlDiff($local[$field],$remote[$field]);
@@ -644,9 +665,9 @@ if (!$continuing) {  //start a fresh pull
 				continue;
 			}
 
-			echo '<h4><b>Question '.$local['id'].'</b>. '.Sanitize::encodeStringForDisplay($local['description']);
+			echo '<p><b>Question '.$local['id'].'. '.Sanitize::encodeStringForDisplay($local['description']).'</b>';
 			echo '<input type="hidden" name="uidref'.$local['uniqueid'].'" value="'.$local['id'].'" />';
-			echo '</h4>';
+			echo '</p>';
 			echo '<p>';
 			if ($local['lastmoddate']<$since) {
 				//it's been updated remotely but not locally
@@ -660,6 +681,8 @@ if (!$continuing) {  //start a fresh pull
 				echo '<span style="color: #ff0000;">Changed Remotely and Locally - potential conflict</span>';
 				echo '. Local: '.tzdate('Y-m-d',$local['lastmoddate']).', Remote: '.tzdate('Y-m-d',$remote['lastmoddate']);
 			}
+			echo '. Check <a href="#" onclick="chkall('.$local['id'].')">All</a> ';
+			echo '<a href="#" onclick="chknone('.$local['id'].')">None</a>';
 			echo '</p>';
 			echo $chghtml;
 		}
@@ -681,7 +704,7 @@ if (!$continuing) {  //start a fresh pull
 					$libhtml .= '<li>';
 					$libhtml = 'New library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'.';
 					//value is localqsetid:locallibid
-					$libhtml .= '<input type="checkbox" name="addnewqli[]" value="'.$remote['uniqueid'].':'.$libdata[$rlib['ulibid']]['id'].':'.$rlib['lastmoddate'].'" checked> Add it</li>';
+					$libhtml .= '<input type="checkbox" class="U'.$remote['uniqueid'].'" name="addnewqli[]" value="'.$remote['uniqueid'].':'.$libdata[$rlib['ulibid']]['id'].':'.$rlib['lastmoddate'].'" checked> Add it</li>';
 					$livesinalib = true;
 				}
 			}
@@ -691,8 +714,10 @@ if (!$continuing) {  //start a fresh pull
 				continue;
 			}
 			echo '<h4><b>Question UID '.$remote['uniqueid'].'</b>.</h4> ';
-			echo '<p>Description: '.Sanitize::encodeStringForDisplay($remote['description']).'</p>';
-			echo '<p><input type="checkbox" name="addnewq-'.$remote['uniqueid'].'" value="1" checked> Add Question.</p>';
+			echo '<p>Description: '.Sanitize::encodeStringForDisplay($remote['description']);
+			echo '. Check <a href="#" onclick="chkall2('.$remote['uniqueid'].')">All</a> ';
+			echo '<a href="#" onclick="chknone2('.$remote['uniqueid'].')">None</a></p>';
+			echo '<p><input type="checkbox" class="U'.$remote['uniqueid'].'" name="addnewq-'.$remote['uniqueid'].'" value="1" checked> Add Question.</p>';
 			echo '<p>Library assignments: <ul>'.$libhtml.'</ul></p>';
 		}
 
