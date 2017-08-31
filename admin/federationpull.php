@@ -21,7 +21,7 @@ function print_header() {
 	echo '<h1>Pulling from Federation Peer</h1>';
 	echo '<form method="post" action="federationpull.php?peer='.Sanitize::onlyInt($peer).'">';
 }
-
+$placeinhead = '<style type="text/css">ins {background-color: #d4fcbc;} del {background-color: #fbb6c2;}</style>';
 
 
 //look up the peer to call
@@ -32,14 +32,11 @@ if ($stm->rowCount()==0) {
 	exit;
 }
 $peerinfo = $stm->fetch(PDO::FETCH_ASSOC);
-
-//set up our stream context for later data pulls
-$streamopts = stream_context_create(array(
-	'http'=>array(
-		'method'=>'GET',
-		'header'=>'Authorization: '.$peerinfo['secret']."\r\n"
-	)
-));
+if (function_exists("hash_hmac")) {
+	$computed_signature =  base64_encode(hash_hmac('sha1', $mypeername, $peer['secret'], true));
+} else {
+	$computed_signature = base64_encode(custom_hmac('sha1', $mypeername, $peer['secret'], true));
+}
 
 //see if we have a pull to continue
 $stm = $DBH->prepare('SELECT id,pulltime,step,fileurl,record FROM imas_federation_pulls WHERE step<10 AND peerid=:id ORDER BY pulltime DESC LIMIT 1');
@@ -70,9 +67,10 @@ if (!$continuing) {  //start a fresh pull
 	//pull from remote
 	$getdata = http_build_query( array(
 		'peer'=>$mypeername,
+		'sig'=>$computed_signature,
 		'since'=>$since,
 		'stage'=>0));
-	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata, false, $streamopts);
+	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata);
 
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$now.'_0.json', 'public');
@@ -453,10 +451,11 @@ if (!$continuing) {  //start a fresh pull
 	}
 	$getdata = http_build_query( array(
 		'peer'=>$mypeername,
+		'sig'=>$computed_signature,
 		'since'=>$since,
 		'stage'=>1,
 		'offset'=>$offset));
-	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata, false, $streamopts);
+	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata);
 
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$pullstatus['pulltime'].'_1.json', 'public');
@@ -603,12 +602,20 @@ if (!$continuing) {  //start a fresh pull
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
 					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
 				foreach ($fields as $field) {
+					$remote[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($remote[$field]));
+					$local[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($local[$field])));
+					if ($field=='ancestorauthors' && $remote[$field]=='') {
+						continue;
+					}
 					if ($remote[$field]!=$local[$field]) {
 						$chghtml .= '<p>'.ucwords($field). ' changed. ';
 						$chghtml .= '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
-						$chghtml .= '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
-						$chghtml .= '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local[$field])).'</td>';
-						$chghtml .= '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote[$field])).'</td></tr></table>';
+						$chghtml .= '<table class="gridded"><tr><td>';
+						$chghtml .= htmlDiff($local[$field],$remote[$field]);
+						$chghtml .= '</td><tr/></table>'
+						//$chghtml .= '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
+						//$chghtml .= '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local[$field])).'</td>';
+						//$chghtml .= '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote[$field])).'</td></tr></table>';
 					}
 				}
 				//TODO:  Figure a way to handle replaceby
@@ -852,9 +859,10 @@ if (!$continuing) {  //start a fresh pull
 	//pull step 3 from remote (changed libs, unchanged q's)
 	$getdata = http_build_query( array(
 		'peer'=>$mypeername,
+		'sig'=>$computed_signature,
 		'since'=>$since,
 		'stage'=>3));
-	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata, false, $streamopts);
+	$data = file_get_contents($peerinfo['url'].'/admin/federatedapi.php?'.$getdata);
 
 	//store for our use
 	storecontenttofile($data, 'fedpulls/'.$peer.'_'.$pullstatus['pulltime'].'_3.json', 'public');

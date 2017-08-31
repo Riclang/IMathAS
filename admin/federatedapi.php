@@ -4,7 +4,7 @@
 
 //exit; //not ready for use yet.
 
-if (empty($_GET['peer']) || empty($_GET['since']) || !isset($_SERVER['HTTP_AUTHORIZATION'])) {
+if (empty($_GET['peer']) || empty($_GET['since']) || !isset($_GET['sig'])) {
 	exit;
 }
 
@@ -19,8 +19,12 @@ if ($stm->rowCount()==0) {
 	exit;
 }
 $peer = $stm->fetch(PDO::FETCH_ASSOC);
-
-if ($peer['secret'] != $_SERVER['HTTP_AUTHORIZATION']) {
+if (function_exists("hash_hmac")) {
+	$computed_signature =  base64_encode(hash_hmac('sha1', $_GET['peer'], $peer['secret'], true));
+} else {
+	$computed_signature = base64_encode(custom_hmac('sha1', $_GET['peer'], $peer['secret'], true));
+}
+if ($computed_signature != $_GET['sig']) {
 	echo '{error:"Invalid authorization"}';
 	exit;
 }
