@@ -602,7 +602,7 @@ if (!$continuing) {  //start a fresh pull
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
 					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
 				foreach ($fields as $field) {
-					$remote[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($remote[$field]));
+					$remote[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($remote[$field])));
 					$local[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($local[$field])));
 					if ($field=='ancestorauthors' && $remote[$field]=='') {
 						continue;
@@ -612,7 +612,7 @@ if (!$continuing) {  //start a fresh pull
 						$chghtml .= '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
 						$chghtml .= '<table class="gridded"><tr><td>';
 						$chghtml .= htmlDiff($local[$field],$remote[$field]);
-						$chghtml .= '</td><tr/></table>'
+						$chghtml .= '</td><tr/></table>';
 						//$chghtml .= '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
 						//$chghtml .= '<tr><td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($local[$field])).'</td>';
 						//$chghtml .= '<td>'.str_replace("\n",'<br/>',Sanitize::encodeStringForDisplay($remote[$field])).'</td></tr></table>';
