@@ -4,7 +4,7 @@
 
 //exit; //not ready for use yet.
 
-if (empty($_GET['peer']) || empty($_GET['since']) || !isset($_GET['sig'])) {
+if (empty($_GET['peer']) || !isset($_GET['since']) || !isset($_GET['sig'])) {
 	exit;
 }
 

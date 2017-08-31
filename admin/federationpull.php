@@ -33,9 +33,9 @@ if ($stm->rowCount()==0) {
 }
 $peerinfo = $stm->fetch(PDO::FETCH_ASSOC);
 if (function_exists("hash_hmac")) {
-	$computed_signature =  base64_encode(hash_hmac('sha1', $mypeername, $peer['secret'], true));
+	$computed_signature =  base64_encode(hash_hmac('sha1', $mypeername, $peerinfo['secret'], true));
 } else {
-	$computed_signature = base64_encode(custom_hmac('sha1', $mypeername, $peer['secret'], true));
+	$computed_signature = base64_encode(custom_hmac('sha1', $mypeername, $peerinfo['secret'], true));
 }
 
 //see if we have a pull to continue
@@ -502,6 +502,13 @@ if (!$continuing) {  //start a fresh pull
 	if (count($quids)==0) {
 		echo '<p>No questions to update</p>';
 	} else {
+		require("../includes/diff.php");
+		$licenses = array(
+			0=>'Copyrighted',
+			1=>'IMathAS / WAMAP / MyOpenMath Community License',
+			2=>'Public Domain',
+			3=>'Creative Commons Attribution-NonCommercial-ShareAlike',
+			4=>'Creative Commons Attribution-ShareAlike');
 		//pull library names and local ids
 		$stm = $DBH->query("SELECT uniqueid,id,name FROM imas_libraries WHERE federationlevel>0");
 		$libdata = array();
@@ -590,6 +597,7 @@ if (!$continuing) {  //start a fresh pull
 				continue;
 			}
 			$chghtml = '';
+			$changedfields = array();
 			if ($remote['deleted']==1 && $local['deleted']==0) {
 				$chghtml .= '<p>Deleted remotely, not deleted locally.  ';
 				$chghtml .= '<input type="checkbox" name="deleteq-'.$local['uniqueid'].'" value="1"> Delete locally </p>';
@@ -602,15 +610,21 @@ if (!$continuing) {  //start a fresh pull
 				$fields = array('author','description', 'qtype', 'control',	'qcontrol', 'qtext', 'answer','extref', 'broken',
 					'solution', 'solutionopts', 'license','ancestorauthors', 'otherattribution');
 				foreach ($fields as $field) {
-					$remote[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($remote[$field])));
-					$local[$field] = trim(str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay($local[$field])));
+					$remote[$field] = str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay(trim($remote[$field])));
+					$local[$field] = str_replace(array("\r","\n"),array("",'<br/>'),Sanitize::encodeStringForDisplay(trim($local[$field])));
 					if ($field=='ancestorauthors' && $remote[$field]=='') {
 						continue;
 					}
 					if ($remote[$field]!=$local[$field]) {
+						if ($field=='license') {
+							$remote['field'] = $licenses[$remote[$field]];
+							$local['field'] = $licenses[$local[$field]];
+						}
+						$changedfields[] = $field;
 						$chghtml .= '<p>'.ucwords($field). ' changed. ';
 						$chghtml .= '<input type="checkbox" name="update'.$field.'-'.$local['uniqueid'].'" value="1" checked> Update it</p>';
 						$chghtml .= '<table class="gridded"><tr><td>';
+						//$chghtml .= $local[$field].'</td><td>'.$remote[$field].'</td><td>';
 						$chghtml .= htmlDiff($local[$field],$remote[$field]);
 						$chghtml .= '</td><tr/></table>';
 						//$chghtml .= '<table class="gridded"><tr><td>Local</td><td>Remote</td></tr>';
@@ -625,7 +639,7 @@ if (!$continuing) {  //start a fresh pull
 					$chghtml .= '<p>Library assignments:<ul>'.$libhtml.'</ul></p>';
 				}
 			}
-			if ($chghtml == '') {
+			if ($chghtml == '' || (count($changedfields)==1 && $changedfields[0]=='author')) {
 				//no changes at all - don't display anything
 				continue;
 			}
