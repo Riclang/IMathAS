@@ -681,8 +681,8 @@ if (!$continuing) {  //start a fresh pull
 				echo '<span style="color: #ff0000;">Changed Remotely and Locally - potential conflict</span>';
 				echo '. Local: '.tzdate('Y-m-d',$local['lastmoddate']).', Remote: '.tzdate('Y-m-d',$remote['lastmoddate']);
 			}
-			echo '. Check <a href="#" onclick="chkall('.$local['id'].')">All</a> ';
-			echo '<a href="#" onclick="chknone('.$local['id'].')">None</a>';
+			echo '. Check <a href="#" onclick="chkall('.$local['id'].');return false;">All</a> ';
+			echo '<a href="#" onclick="chknone('.$local['id'].');return false;">None</a>';
 			echo '</p>';
 			echo $chghtml;
 		}
@@ -715,8 +715,8 @@ if (!$continuing) {  //start a fresh pull
 			}
 			echo '<h4><b>Question UID '.$remote['uniqueid'].'</b>.</h4> ';
 			echo '<p>Description: '.Sanitize::encodeStringForDisplay($remote['description']);
-			echo '. Check <a href="#" onclick="chkall2('.$remote['uniqueid'].')">All</a> ';
-			echo '<a href="#" onclick="chknone2('.$remote['uniqueid'].')">None</a></p>';
+			echo '. Check <a href="#" onclick="chkall2('.$remote['uniqueid'].');return false;">All</a> ';
+			echo '<a href="#" onclick="chknone2('.$remote['uniqueid'].');return false;">None</a></p>';
 			echo '<p><input type="checkbox" class="U'.$remote['uniqueid'].'" name="addnewq-'.$remote['uniqueid'].'" value="1" checked> Add Question.</p>';
 			echo '<p>Library assignments: <ul>'.$libhtml.'</ul></p>';
 		}
@@ -743,6 +743,9 @@ if (!$continuing) {  //start a fresh pull
 		if (ctype_digit($q['uniqueid'])) {
 			$quids[] = $q['uniqueid'];
 			$quidref[$q['uniqueid']] = $i;
+			if (isset($_POST['uidref'.$q['uniqueid']])) {
+				$localqidref[$q['uniqueid']] = Sanitize::onlyInt($_POST['uidref'.$q['uniqueid']]);
+			}
 		} else {
 			//remove any invalid uniqueids
 			unset($data['data'][$i]);
@@ -761,12 +764,34 @@ if (!$continuing) {  //start a fresh pull
 
 	//DO WORK
 	//loop over questions
-
+	$includedqs = array();  //includecodefrom to resolve
+	$includetoresolve = array();
 	foreach ($quids as $quid) {
-		if (isset($_POST['uidref'.$quid])) {
-			$localqidref[$quid] = Sanitize::onlyInt($_POST['uidref'.$quid]);
-		}
 		$remote = $data['data'][$quidref[$quid]];
+
+		//if adding or updating control/qtext, look for includecodefrom
+		//resolve immediately if possible; otherwise store for later
+		if ((isset($_POST['addnewq-'.$quid]) || isset($_POST['updatecontrol-'.$quid])) && preg_match_all('/includecodefrom\(UID(\d+)\)/',$remote['control'],$matches,PREG_PATTERN_ORDER) >0) {
+			if (isset($localqidref[$matches[1]])) {
+				$remote['control'] = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
+						return "includecodefrom(".$localqidref[$matches[1]].")";
+					}, $remote['control']);
+			} else {
+				$includedqs = array_merge($includedqs,$matches[1]);
+				$includetoresolve[$quid] = 1;
+			}
+		}
+		if ((isset($_POST['addnewq-'.$quid]) || isset($_POST['updateqtext-'.$quid])) && preg_match_all('/includeqtextfrom\(UID(\d+)\)/',$remote['qtext'],$matches,PREG_PATTERN_ORDER) >0) {
+			if (isset($localqidref[$matches[1]])) {
+				$remote['qtext'] = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
+						return "includeqtextfrom(".$localqidref[$matches[1]].")";
+					}, $remote['qtext']);
+			} else {
+				$includedqs = array_merge($includedqs,$matches[1]);
+				$includetoresolve[$quid] = 1;
+			}
+		}
+
 		if (isset($_POST['deleteq-'.$quid])) {
 			//  if isset deleteq-uniqueid then set as deleted
 			$delq->execute(array(':lastmoddate'=>$pullstatus['pulltime'], ':id'=>$localqidref[$quid]));
@@ -812,6 +837,27 @@ if (!$continuing) {  //start a fresh pull
 				$vals[':id'] = $localqidref[$quid];
 				$stm = $DBH->prepare("UPDATE imas_questionset SET $sets WHERE id=:id");
 				$stm->execute($vals);
+				//TODO:: NEED to add for added questions too
+				if (isset($_POST['updatecontrol-'.$quid]) && preg_match_all('/includecodefrom\(UID(\d+)\)/',$remote['control'],$matches,PREG_PATTERN_ORDER) >0) {
+					if (isset($localqidref[$matches[1]])) {
+						$remote['control'] = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
+								return "includecodefrom(".$localqidref[$matches[1]].")";
+							}, $remote['control']);
+					} else {
+						$includedqs = array_merge($includedqs,$matches[1]);
+						$includetoresolve[$quid] = 1;
+					}
+				}
+				if (isset($_POST['updateqtext-'.$quid]) && preg_match_all('/includeqtextfrom\(UID(\d+)\)/',$remote['qtext'],$matches,PREG_PATTERN_ORDER) >0) {
+					if (isset($localqidref[$matches[1]])) {
+						$remote['qtext'] = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
+								return "includeqtextfrom(".$localqidref[$matches[1]].")";
+							}, $remote['qtext']);
+					} else {
+						$includedqs = array_merge($includedqs,$matches[1]);
+						$includetoresolve[$quid] = 1;
+					}
+				}
 				//echo "Updating $quid<br/>";
 				if (isset($_POST['updatecontrol-'.$quid]) && count($remote['imgs'])>0) {
 					//TODO:  update imas_qimages
@@ -827,6 +873,43 @@ if (!$continuing) {  //start a fresh pull
 			}
 		}
 	} // end loop over questions
+
+	if (count($includetoresolve)>0) {
+		//lookup backrefs
+		$includedbackref = array();
+		if (count($includedqs)>0) {
+			$placeholders = Sanitize::generateQueryPlaceholders($includedqs);
+			//DB $query = "SELECT id,uniqueid FROM imas_questionset WHERE uniqueid IN ($includedlist)";
+			//DB $result = mysql_query($query) or die("Query failed : $query"  . mysql_error());
+			//DB while ($row = mysql_fetch_row($result)) {
+			$stm = $DBH->prepare("SELECT id,uniqueid FROM imas_questionset WHERE uniqueid IN ($placeholders)");
+			$stm->execute($includedqs);
+			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+				$includedbackref[$row[1]] = $row[0];
+			}
+		}
+		$qidstoupdate = array_values(array_keys($includetoresolve));
+		$placeholders = Sanitize::generateQueryPlaceholders($qidstoupdate);
+		//DB $query = "SELECT id,control,qtext FROM imas_questionset WHERE id IN ($updatelist)";
+		//DB $result = mysql_query($query) or die("error on: $query: " . mysql_error());
+		//DB while ($row = mysql_fetch_row($result)) {
+		$stm = $DBH->prepare("SELECT id,control,qtext FROM imas_questionset WHERE id IN ($placeholders)");
+		$stm->execute($qidstoupdate);
+		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+			//DB $control = addslashes(preg_replace('/includecodefrom\(UID(\d+)\)/e','"includecodefrom(".$includedbackref["\\1"].")"',$row[1]));
+			//DB $qtext = addslashes(preg_replace('/includeqtextfrom\(UID(\d+)\)/e','"includeqtextfrom(".$includedbackref["\\1"].")"',$row[2]));
+			$control = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($includedbackref) {
+					return "includecodefrom(".$includedbackref[$matches[1]].")";
+				}, $row[1]);
+			$qtext = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($includedbackref) {
+					return "includeqtextfrom(".$includedbackref[$matches[1]].")";
+				}, $row[2]);
+			//DB $query = "UPDATE imas_questionset SET control='$control',qtext='$qtext' WHERE id={$row[0]}";
+			//DB mysql_query($query) or die("error on: $query: " . mysql_error());
+			$stm2 = $DBH->prepare("UPDATE imas_questionset SET control=:control,qtext=:qtext WHERE id=:id");
+			$stm2->execute(array(':control'=>$control, ':qtext'=>$qtext, ':id'=>$row[0]));
+		}
+	}
 
 	$now = time();
 
@@ -940,18 +1023,17 @@ if (!$continuing) {  //start a fresh pull
 	echo '<h2>Updating Library Assignments for Unchanged Questions</h2>';
 	$lookups = array();
 	$qlookups = array();
-	foreach ($data['data'] AS $i=>$rli) {
+	foreach ($data['data']['libitems'] AS $i=>$rli) {
 		if (ctype_digit($rli['uniqueid']) && ctype_digit($rli['ulibid'])) {
 			array_push($lookups, $rli['ulibid'],$rli['uniqueid']);
 			$qlookups[] = $rli['uniqueid'];
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i]);
+			unset($data['data']['libitems'][$i]);
 		}
 	}
-	if (count($data['data'][$i])==0) {
+	if (count($data['data']['libitems'])==0) {
 		echo '<p>No Changes to Make</p>';
-		echo '<input type="submit" name="record" value="Finish"/>';
 	} else {
 
 		$ph = Sanitize::generateQueryPlaceholders($qlookups);
@@ -974,7 +1056,7 @@ if (!$continuing) {  //start a fresh pull
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			$llis[$row['ulid'].'-'.$row['uqid']] = $row;
 		}
-		foreach ($data['data'] AS $i=>$rlib) {
+		foreach ($data['data']['libitems'] AS $i=>$rlib) {
 			if (isset($llis[$rlib['ulibid'].'-'.$rlib['uniqueid']])) {
 				//lib item exists locally
 				$llib = $llis[$rlib['ulibid'].'-'.$rlib['uniqueid']];
@@ -1016,8 +1098,43 @@ if (!$continuing) {  //start a fresh pull
 				echo '<input type="checkbox" name="addli[]" value="'.$qdata[$rlib['uniqueid']]['id'].':'.$libdata[$rlib['ulibid']]['id'].'" checked> Add it</p>';
 			}
 		}
-		echo '<input type="submit" name="record" value="Record"/>';
 	}
+
+	echo '<h2>Updating ReplaceBy Records</h2>';
+	$lookups = array();
+	$qlookups = array();
+	foreach ($data['data']['replacebys'] AS $i=>$rb) {
+		if (ctype_digit($rb['uniqueid']) && ctype_digit($rb['replaceby'])) {
+			array_push($lookups, $rb['uniqueid'],$rli['replaceby']);
+		} else {
+			//remove any invalid uniqueids
+			unset($data['data']['replacebys'][$i]);
+		}
+	}
+	if (count($data['data']['replacebys'])==0) {
+		echo '<p>No Changes to Make</p>';
+	} else {
+
+		$ph = Sanitize::generateQueryPlaceholders($lookups);
+		$stm = $DBH->prepare("SELECT uniqueid,id,description FROM imas_questionset WHERE uniqueid IN ($ph)");
+		$stm->execute($lookups);
+		$qdata = array();
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$qdata[$row['uniqueid']] = array('id'=>$row['id'], 'description'=>$row['description']);
+		}
+
+		foreach ($data['data']['replacebys'] AS $i=>$rb) {
+			if (!isset($qdata[$rb['uniqueid']]) || !isset($qdata[$rb['replaceby']]) ) {
+				//question or replacement isn't on system
+				continue;
+			}
+			echo '<p><b>Question '.$qdata[$rb['uniqueid']]['id'].': '$qdata[$rb['uniqueid']]['description'].'</b></p>';
+			echo '<p><input type="checkbox" name="replacebys[]" value="'.$qdata[$rb['uniqueid']]['id'].':'.$qdata[$rb['replaceby']]['id'].'" checked /> ';
+			echo 'Deprecate and replace with Question '$qdata[$rb['replacebyid']]['id'].': '$qdata[$rb['replaceby']]['description'].'</p>';
+		}
+	}
+
+	echo '<input type="submit" name="record" value="Record"/>';
 
 	$done = false;
 	$autocontinue = false;
@@ -1027,12 +1144,12 @@ if (!$continuing) {  //start a fresh pull
 	//$record['step4']] = $_POST;
 	$data = json_decode(file_get_contents(getfopenloc($pullstatus['fileurl'])), true);
 
-	foreach ($data['data'] AS $i=>$rli) {
+	foreach ($data['data']['libitems'] AS $i=>$rli) {
 		if (ctype_digit($rli['uniqueid']) && ctype_digit($rli['ulibid'])) {
 
 		} else {
 			//remove any invalid uniqueids
-			unset($data['data'][$i]);
+			unset($data['data']['libitems'][$i]);
 		}
 	}
 
@@ -1072,6 +1189,18 @@ if (!$continuing) {  //start a fresh pull
 		$stm->execute(array_merge(array($pullstatus['pulltime']),$_POST['junkli']));
 	}
 
+	if (isset($_POST['replacebys'])) {
+		$stm = $DBH->prepare("UPDATE imas_questionset SET replaceby=:replaceby WHERE id=:id");
+		$query = 'UPDATE imas_questions LEFT JOIN imas_assessment_sessions ON imas_questions.assessmentid = imas_assessment_sessions.assessmentid ';
+		$query .= "SET imas_questions.questionsetid=:replaceby WHERE imas_assessment_sessions.id IS NULL AND imas_questions.questionsetid=:questionsetid";
+		$upd_assess_stm = $DBH->prepare($query);
+		foreach ($_POST['replacebys'] as $rbinfo) {
+			//loop over addli and add localqid:locallibid
+			$rbparts = explode(':', $rbinfo);
+			$stm->execute(array(':id'=>$rbinfo[0], ':replaceby'=>$rbinfo[1]));
+			$upd_assess_stm->execute(array(':replaceby'=>$rbinfo[1], ':questionsetid'=>$rbinfo[0]));
+		}
+	}
 
 	//all done.  Record we're done
 	$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=99,record=:record WHERE id=:id");

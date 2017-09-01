@@ -81,10 +81,11 @@ if ($stage == 0) { //send updated libraries
 		$offset = 0;
 	}
 	$batchsize = 1000;
-	//TODO:  Handle replaceby, sourceinstall
+	//TODO:  Handle replaceby, sourceinstall, includecodefrom, includeqtextfrom
 	$query = 'SELECT iq.*,il.uniqueid AS ulibid,ili.junkflag,ili.deleted AS libdel,ili.lastmoddate AS liblastmod FROM imas_questionset as iq ';
-	$query .= 'JOIN imas_library_items AS ili ON iq.id=ili.qsetid AND iq.lastmoddate>? AND iq.userights>1 AND iq.license>0 ';
+	$query .= 'JOIN imas_library_items AS ili ON iq.id=ili.qsetid ';
 	$query .= 'JOIN imas_libraries AS il ON il.id=ili.libid AND il.federationlevel>0 AND il.userights=8 ';
+	$query .= 'WHERE iq.lastmoddate>? AND iq.userights>1 AND iq.license>0 ';
 	if (count($toskip)>0) {
 		$query .= "AND iq.lastmoddate NOT IN ($skipph) ";
 	}
@@ -102,6 +103,8 @@ if ($stage == 0) { //send updated libraries
 	}
 	$qinfo = array();
 	$qcnt = -1; $lastq = -1; $linecnt = -1; $hasmoreq = false;
+	$includedqs = array();  //includecodefrom to resolve
+	$includetoresolve = array();
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		$linecnt++;
 		if ($row['id']==$lastq) { //same question, different libid
@@ -111,6 +114,14 @@ if ($stage == 0) { //send updated libraries
 			//for a question are sent with the question
 			if ($linecnt>.9*$batchsize) {$hasmoreq = true; break;}
 			$qcnt++;
+			if (preg_match_all('/includecodefrom\((\d+)\)/',$row['control'],$matches,PREG_PATTERN_ORDER) >0) {
+				$includedqs = array_merge($includedqs,$matches[1]);
+				$includetoresolve[$qcnt] = 1;
+			}
+			if (preg_match_all('/includeqtextfrom\((\d+)\)/',$row['qtext'],$matches,PREG_PATTERN_ORDER) >0) {
+				$includedqs = array_merge($includedqs,$matches[1]);
+				$includetoresolve[$qcnt] = 1;
+			}
 			$qinfo[$qcnt] = array('uniqueid'=>$row['uniqueid'], 'adddate'=>$row['adddate'],
 				'lastmoddate'=>$row['lastmoddate'], 'author'=>$row['author'],
 				'description'=>$row['description'], 'qtype'=>$row['qtype'], 'control'=>$row['control'],
@@ -130,6 +141,22 @@ if ($stage == 0) { //send updated libraries
 			}
 			$lastq = $row['id'];
 		}
+	}
+	$includedqs = array_unique($includedqs);
+	$placeholders = Sanitize::generateQueryPlaceholders($includedqs);
+	$stm = $DBH->prepare("SELECT id,uniqueid FROM imas_questionset WHERE id ON ($placeholders)");
+	$stm->execute($includedqs);
+	$includedbackref = array();
+	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+		$includedbackref[$row['id']] = $row['uniqueid'];
+	}
+	foreach ($includetoresolve as $i=>$v) {
+		$qinfo[$i]['control'] = preg_replace_callback('/includecodefrom\((\d+)\)/', function($matches) use ($includedbackref) {
+				return "includecodefrom(UID".$includedbackref[$matches[1]].")";
+			}, $qinfo[$i]['control']);
+		$qinfo[$i]['qtext'] = preg_replace_callback('/includeqtextfrom\((\d+)\)/', function($matches) use ($includedbackref) {
+				return "includeqtextfrom(UID".$includedbackref[$matches[1]].")";
+			}, $qinfo[$i]['qtext']);
 	}
 	echo json_encode(array('since'=>$since, 'stage'=>1, 'nextoffset'=>$hasmoreq?($offset+$linecnt):-1, 'data'=>$qinfo));
 	exit;
@@ -153,7 +180,26 @@ if ($stage == 0) { //send updated libraries
 	while ($row = $stm->fetch(PDO::FETCH_NUM)) {
 		 $libitems[] = array('ulibid'=>$row[0], 'uniqueid'=>$row[1], 'junkflag'=>$row[2], 'deleted'=>$row[3]);
 	}
-	echo json_encode(array('since'=>$since, 'stage'=>3, 'data'=>$libitems));
+	$replacebys = array();
+	$query = 'SELECT iq.uniqueid,iq2.uniqueid FROM imas_questionset AS iq ';
+	$query .= 'LEFT JOIN imas_questionset AS iq2 ON iq.replaceby=iq.id ';
+	$query .= 'WHERE iq.replaceby>0 AND iq.lastmoddate>? ';
+	if (count($toskip)>0) {
+		$query .= "AND iq.lastmoddate NOT IN ($skipph) ";
+	}
+	$stm = $DBH->prepare($query);
+	if (count($toskip)>0) {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array_merge(array($since),$toskip));
+	} else {
+		$stm = $DBH->prepare($query);
+		$stm->execute(array($since));
+	}
+	while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+		$replacebys[] = array('uniqueid'=>$row[0], 'replaceby'=>$row[1]);
+	}
+
+	echo json_encode(array('since'=>$since, 'stage'=>3, 'data'=>array('libitems'=>$libitems,'replacebys'=>$replacebys)));
 	exit;
 }
 ?>
