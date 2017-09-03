@@ -772,23 +772,30 @@ if (!$continuing) {  //start a fresh pull
 		//if adding or updating control/qtext, look for includecodefrom
 		//resolve immediately if possible; otherwise store for later
 		if ((isset($_POST['addnewq-'.$quid]) || isset($_POST['updatecontrol-'.$quid])) && preg_match_all('/includecodefrom\(UID(\d+)\)/',$remote['control'],$matches,PREG_PATTERN_ORDER) >0) {
-			if (isset($localqidref[$matches[1]])) {
-				$remote['control'] = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
-						return "includecodefrom(".$localqidref[$matches[1]].")";
-					}, $remote['control']);
-			} else {
-				$includedqs = array_merge($includedqs,$matches[1]);
-				$includetoresolve[$quid] = 1;
+			foreach ($matches[1] as $includeduid) {
+				if (isset($localqidref[$includeduid])) {
+					$remote['control'] = str_replace('includecodefrom(UID'.$includeduid.')', 'includecodefrom('.$localqidref[$includeduid].')', $remote['control']);
+					/*$remote['control'] = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
+							return "includecodefrom(".$localqidref[$matches[1]].")";
+						}, $remote['control']);*/
+				} else {
+					$includedqs[] = $includeduid;
+					$includetoresolve[$quid] = 1;
+				}
 			}
 		}
 		if ((isset($_POST['addnewq-'.$quid]) || isset($_POST['updateqtext-'.$quid])) && preg_match_all('/includeqtextfrom\(UID(\d+)\)/',$remote['qtext'],$matches,PREG_PATTERN_ORDER) >0) {
-			if (isset($localqidref[$matches[1]])) {
-				$remote['qtext'] = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
-						return "includeqtextfrom(".$localqidref[$matches[1]].")";
-					}, $remote['qtext']);
-			} else {
-				$includedqs = array_merge($includedqs,$matches[1]);
-				$includetoresolve[$quid] = 1;
+			foreach ($matches[1] as $includeduid) {
+				if (isset($localqidref[$includeduid])) {
+					$remote['qtext'] = str_replace('includeqtextfrom(UID'.$includeduid.')', 'includeqtextfrom('.$localqidref[$includeduid].')', $remote['qtext']);
+					/*
+					$remote['qtext'] = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
+							return "includeqtextfrom(".$localqidref[$matches[1]].")";
+						}, $remote['qtext']);*/
+				} else {
+					$includedqs[] = $includeduid;
+					$includetoresolve[$quid] = 1;
+				}
 			}
 		}
 
@@ -837,27 +844,7 @@ if (!$continuing) {  //start a fresh pull
 				$vals[':id'] = $localqidref[$quid];
 				$stm = $DBH->prepare("UPDATE imas_questionset SET $sets WHERE id=:id");
 				$stm->execute($vals);
-				//TODO:: NEED to add for added questions too
-				if (isset($_POST['updatecontrol-'.$quid]) && preg_match_all('/includecodefrom\(UID(\d+)\)/',$remote['control'],$matches,PREG_PATTERN_ORDER) >0) {
-					if (isset($localqidref[$matches[1]])) {
-						$remote['control'] = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
-								return "includecodefrom(".$localqidref[$matches[1]].")";
-							}, $remote['control']);
-					} else {
-						$includedqs = array_merge($includedqs,$matches[1]);
-						$includetoresolve[$quid] = 1;
-					}
-				}
-				if (isset($_POST['updateqtext-'.$quid]) && preg_match_all('/includeqtextfrom\(UID(\d+)\)/',$remote['qtext'],$matches,PREG_PATTERN_ORDER) >0) {
-					if (isset($localqidref[$matches[1]])) {
-						$remote['qtext'] = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($localqidref) {
-								return "includeqtextfrom(".$localqidref[$matches[1]].")";
-							}, $remote['qtext']);
-					} else {
-						$includedqs = array_merge($includedqs,$matches[1]);
-						$includetoresolve[$quid] = 1;
-					}
-				}
+				
 				//echo "Updating $quid<br/>";
 				if (isset($_POST['updatecontrol-'.$quid]) && count($remote['imgs'])>0) {
 					//TODO:  update imas_qimages
@@ -879,9 +866,6 @@ if (!$continuing) {  //start a fresh pull
 		$includedbackref = array();
 		if (count($includedqs)>0) {
 			$placeholders = Sanitize::generateQueryPlaceholders($includedqs);
-			//DB $query = "SELECT id,uniqueid FROM imas_questionset WHERE uniqueid IN ($includedlist)";
-			//DB $result = mysql_query($query) or die("Query failed : $query"  . mysql_error());
-			//DB while ($row = mysql_fetch_row($result)) {
 			$stm = $DBH->prepare("SELECT id,uniqueid FROM imas_questionset WHERE uniqueid IN ($placeholders)");
 			$stm->execute($includedqs);
 			while ($row = $stm->fetch(PDO::FETCH_NUM)) {
@@ -890,24 +874,33 @@ if (!$continuing) {  //start a fresh pull
 		}
 		$qidstoupdate = array_values(array_keys($includetoresolve));
 		$placeholders = Sanitize::generateQueryPlaceholders($qidstoupdate);
-		//DB $query = "SELECT id,control,qtext FROM imas_questionset WHERE id IN ($updatelist)";
-		//DB $result = mysql_query($query) or die("error on: $query: " . mysql_error());
-		//DB while ($row = mysql_fetch_row($result)) {
-		$stm = $DBH->prepare("SELECT id,control,qtext FROM imas_questionset WHERE id IN ($placeholders)");
+		$stm = $DBH->prepare("SELECT id,control,qtext,broken,uniqueid FROM imas_questionset WHERE uniqueid IN ($placeholders)");
 		$stm->execute($qidstoupdate);
 		while ($row = $stm->fetch(PDO::FETCH_NUM)) {
-			//DB $control = addslashes(preg_replace('/includecodefrom\(UID(\d+)\)/e','"includecodefrom(".$includedbackref["\\1"].")"',$row[1]));
-			//DB $qtext = addslashes(preg_replace('/includeqtextfrom\(UID(\d+)\)/e','"includeqtextfrom(".$includedbackref["\\1"].")"',$row[2]));
-			$control = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($includedbackref) {
-					return "includecodefrom(".$includedbackref[$matches[1]].")";
-				}, $row[1]);
-			$qtext = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($includedbackref) {
-					return "includeqtextfrom(".$includedbackref[$matches[1]].")";
-				}, $row[2]);
-			//DB $query = "UPDATE imas_questionset SET control='$control',qtext='$qtext' WHERE id={$row[0]}";
-			//DB mysql_query($query) or die("error on: $query: " . mysql_error());
-			$stm2 = $DBH->prepare("UPDATE imas_questionset SET control=:control,qtext=:qtext WHERE id=:id");
-			$stm2->execute(array(':control'=>$control, ':qtext'=>$qtext, ':id'=>$row[0]));
+			$thisisbroken = $row[3];
+			$quid = $row[4];
+			if (isset($_POST['addnewq-'.$quid]) || isset($_POST['updatecontrol-'.$quid])) {
+				$control = preg_replace_callback('/includecodefrom\(UID(\d+)\)/', function($matches) use ($includedbackref, &$thisisbroken) {
+						if (isset($includedbackref[$matches[1]])) {
+							return "includecodefrom(".$includedbackref[$matches[1]].")";
+						} else {
+							$thisisbroken = 1;
+							return "includecodefrom(undefined)";
+						}
+					}, $row[1]);
+			}
+			if (isset($_POST['addnewq-'.$quid]) || isset($_POST['updateqtext-'.$quid])) {
+				$qtext = preg_replace_callback('/includeqtextfrom\(UID(\d+)\)/', function($matches) use ($includedbackref, &$thisisbroken) {
+						if (isset($includedbackref[$matches[1]])) {
+							return "includeqtextfrom(".$includedbackref[$matches[1]].")";
+						} else {
+							$thisisbroken = 1;
+							return "includecodefrom(undefined)";
+						}
+					}, $row[2]);
+			}
+			$stm2 = $DBH->prepare("UPDATE imas_questionset SET control=:control,qtext=:qtext,broken=:broken WHERE id=:id");
+			$stm2->execute(array(':control'=>$control, ':qtext'=>$qtext, ':id'=>$row[0], ':broken'=>$thisisbroken));
 		}
 	}
 
@@ -1105,7 +1098,7 @@ if (!$continuing) {  //start a fresh pull
 	$qlookups = array();
 	foreach ($data['data']['replacebys'] AS $i=>$rb) {
 		if (ctype_digit($rb['uniqueid']) && ctype_digit($rb['replaceby'])) {
-			array_push($lookups, $rb['uniqueid'],$rli['replaceby']);
+			array_push($lookups, $rb['uniqueid'],$rb['replaceby']);
 		} else {
 			//remove any invalid uniqueids
 			unset($data['data']['replacebys'][$i]);
@@ -1128,9 +1121,9 @@ if (!$continuing) {  //start a fresh pull
 				//question or replacement isn't on system
 				continue;
 			}
-			echo '<p><b>Question '.$qdata[$rb['uniqueid']]['id'].': '$qdata[$rb['uniqueid']]['description'].'</b></p>';
+			echo '<p><b>Question '.$qdata[$rb['uniqueid']]['id'].': '.$qdata[$rb['uniqueid']]['description'].'</b></p>';
 			echo '<p><input type="checkbox" name="replacebys[]" value="'.$qdata[$rb['uniqueid']]['id'].':'.$qdata[$rb['replaceby']]['id'].'" checked /> ';
-			echo 'Deprecate and replace with Question '$qdata[$rb['replacebyid']]['id'].': '$qdata[$rb['replaceby']]['description'].'</p>';
+			echo 'Deprecate and replace with Question '.$qdata[$rb['replaceby']]['id'].': '.$qdata[$rb['replaceby']]['description'].'</p>';
 		}
 	}
 
@@ -1196,9 +1189,9 @@ if (!$continuing) {  //start a fresh pull
 		$upd_assess_stm = $DBH->prepare($query);
 		foreach ($_POST['replacebys'] as $rbinfo) {
 			//loop over addli and add localqid:locallibid
-			$rbparts = explode(':', $rbinfo);
-			$stm->execute(array(':id'=>$rbinfo[0], ':replaceby'=>$rbinfo[1]));
-			$upd_assess_stm->execute(array(':replaceby'=>$rbinfo[1], ':questionsetid'=>$rbinfo[0]));
+			$rbparts = explode(':', $rbinfo);                                               
+			$stm->execute(array(':id'=>$rbparts[0], ':replaceby'=>$rbparts[1]));
+			$upd_assess_stm->execute(array(':replaceby'=>$rbparts[1], ':questionsetid'=>$rbparts[0]));
 		}
 	}
 

@@ -143,20 +143,22 @@ if ($stage == 0) { //send updated libraries
 		}
 	}
 	$includedqs = array_unique($includedqs);
-	$placeholders = Sanitize::generateQueryPlaceholders($includedqs);
-	$stm = $DBH->prepare("SELECT id,uniqueid FROM imas_questionset WHERE id ON ($placeholders)");
-	$stm->execute($includedqs);
-	$includedbackref = array();
-	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
-		$includedbackref[$row['id']] = $row['uniqueid'];
-	}
-	foreach ($includetoresolve as $i=>$v) {
-		$qinfo[$i]['control'] = preg_replace_callback('/includecodefrom\((\d+)\)/', function($matches) use ($includedbackref) {
-				return "includecodefrom(UID".$includedbackref[$matches[1]].")";
-			}, $qinfo[$i]['control']);
-		$qinfo[$i]['qtext'] = preg_replace_callback('/includeqtextfrom\((\d+)\)/', function($matches) use ($includedbackref) {
-				return "includeqtextfrom(UID".$includedbackref[$matches[1]].")";
-			}, $qinfo[$i]['qtext']);
+	if (count($includedqs)>0) {
+		$placeholders = Sanitize::generateQueryPlaceholders($includedqs);
+		$stm = $DBH->prepare("SELECT id,uniqueid FROM imas_questionset WHERE id IN ($placeholders)");
+		$stm->execute($includedqs);
+		$includedbackref = array();
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$includedbackref[$row['id']] = $row['uniqueid'];
+		}
+		foreach ($includetoresolve as $i=>$v) {
+			$qinfo[$i]['control'] = preg_replace_callback('/includecodefrom\((\d+)\)/', function($matches) use ($includedbackref) {
+					return "includecodefrom(UID".$includedbackref[$matches[1]].")";
+				}, $qinfo[$i]['control']);
+			$qinfo[$i]['qtext'] = preg_replace_callback('/includeqtextfrom\((\d+)\)/', function($matches) use ($includedbackref) {
+					return "includeqtextfrom(UID".$includedbackref[$matches[1]].")";
+				}, $qinfo[$i]['qtext']);
+		}
 	}
 	echo json_encode(array('since'=>$since, 'stage'=>1, 'nextoffset'=>$hasmoreq?($offset+$linecnt):-1, 'data'=>$qinfo));
 	exit;
@@ -182,7 +184,7 @@ if ($stage == 0) { //send updated libraries
 	}
 	$replacebys = array();
 	$query = 'SELECT iq.uniqueid,iq2.uniqueid FROM imas_questionset AS iq ';
-	$query .= 'LEFT JOIN imas_questionset AS iq2 ON iq.replaceby=iq.id ';
+	$query .= 'LEFT JOIN imas_questionset AS iq2 ON iq.replaceby=iq2.id ';
 	$query .= 'WHERE iq.replaceby>0 AND iq.lastmoddate>? ';
 	if (count($toskip)>0) {
 		$query .= "AND iq.lastmoddate NOT IN ($skipph) ";
@@ -196,6 +198,7 @@ if ($stage == 0) { //send updated libraries
 		$stm->execute(array($since));
 	}
 	while ($row = $stm->fetch(PDO::FETCH_NUM)) {
+		if ($row[1]===null) {continue;}
 		$replacebys[] = array('uniqueid'=>$row[0], 'replaceby'=>$row[1]);
 	}
 
