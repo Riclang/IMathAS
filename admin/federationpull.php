@@ -585,7 +585,12 @@ if (!$continuing) {  //start a fresh pull
 					} else if ($llib['deleted']==0 && $rlib['deleted']==1) {
 						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
 						$libhtml .= 'Deleted remotely, not deleted locally. ';
-						$libhtml .= '<input type="checkbox" name="deleteli[]" value="'.$llib['iliid'].'"> Delete locally </li>';
+						if ($llib['junkflag']==1) {
+							$libhtml .= 'Marked as wrong lib locally. ';
+							$libhtml .= '<input type="checkbox" name="deleteli[]" value="'.$llib['iliid'].'" checked> Delete locally </p>';
+						} else {
+							$libhtml .= '<input type="checkbox" name="deleteli[]" value="'.$llib['iliid'].'"> Delete locally </p>';
+						}
 					} else if ($llib['junkflag']==1 && $rlib['junkflag']==0) {
 						$libhtml .= '<li>Library assignment: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
 						$libhtml .= 'Marked OK remotely, Marked as wrong lib locally. ';
@@ -1070,7 +1075,12 @@ if (!$continuing) {  //start a fresh pull
 					echo '<p>Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
 					echo 'Question: '.Sanitize::encodeStringForDisplay($qdata[$rlib['uniqueid']]['description']).'. ';
 					echo 'Deleted remotely, not deleted locally. ';
-					echo '<input type="checkbox" name="deleteli[]" value="'.$llib['id'].'"> Delete locally </p>';
+					if ($llib['junkflag']==1) {
+						echo 'Marked as wrong lib locally. ';
+						echo '<input type="checkbox" name="deleteli[]" value="'.$llib['id'].'" checked> Delete locally </p>';
+					} else {
+						echo '<input type="checkbox" name="deleteli[]" value="'.$llib['id'].'"> Delete locally </p>';
+					}
 				}
 				if ($llib['junkflag']==1 && $rlib['junkflag']==0) {
 					echo '<p>Library: '.Sanitize::encodeStringForDisplay($libdata[$rlib['ulibid']]['name']).'. ';
@@ -1195,6 +1205,22 @@ if (!$continuing) {  //start a fresh pull
 		}
 	}
 
+	//now, resolve any unassigned issues
+	//first, try to undelete the unassigned library item for any question with no undeleted library items
+	$query = "UPDATE imas_library_items AS ili, (SELECT qsetid FROM imas_library_items GROUP BY qsetid HAVING min(deleted)=1) AS tofix ";
+	$query .= "SET ili.deleted=0 WHERE ili.qsetid=tofix.qsetid AND ili.libid=0";
+	$stm = $DBH->query($query);
+	
+	//if any still have no undeleted library items, then they must not have an unassigned entry to undelete, so add it
+	$query = "INSERT INTO imas_library_items (libid,qsetid,ownerid,junkflag,deleted,lastmoddate) ";
+	$query .= "(SELECT 0,ili.qsetid,iq.ownerid,0,0,iq.lastmoddate FROM imas_library_items AS ili JOIN imas_questionset AS iq ON iq.id=ili.qsetid GROUP BY ili.qsetid HAVING min(ili.deleted)=1)";
+	$stm = $DBH->query($query);
+	
+	//make unassigned deleted if there's also an undeleted other library
+	$query = "UPDATE imas_library_items AS A JOIN imas_library_items AS B ON A.qsetid=B.qsetid AND A.deleted=0 AND B.deleted=0 ";
+	$query .= "SET A.deleted=1 WHERE A.libid=0 AND B.libid>0";
+	$stm = $DBH->query($query);
+	
 	//all done.  Record we're done
 	$stm = $DBH->prepare("UPDATE imas_federation_pulls SET step=99,record=:record WHERE id=:id");
 	$stm->execute(array(':record'=>json_encode($record), ':id'=>$pullstatus['id']));
