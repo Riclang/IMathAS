@@ -569,9 +569,9 @@ if ($myrights<20) {
 		//DB $query .= "FROM imas_libraries LEFT JOIN imas_library_items ON imas_library_items.libid=imas_libraries.id ";
 		//DB $query .= "GROUP BY imas_libraries.id";
 		//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
-		$query = "SELECT imas_libraries.id,imas_libraries.name,imas_libraries.ownerid,imas_libraries.userights,imas_libraries.sortorder,imas_libraries.parent,imas_libraries.groupid,count(imas_library_items.id) AS count ";
+		$query = "SELECT imas_libraries.id,imas_libraries.name,imas_libraries.ownerid,imas_libraries.userights,imas_libraries.federationlevel,imas_libraries.sortorder,imas_libraries.parent,imas_libraries.groupid,count(imas_library_items.id) AS count ";
 		$query .= "FROM imas_libraries LEFT JOIN imas_library_items ON imas_library_items.libid=imas_libraries.id and imas_library_items.deleted=0 ";
-		$query .= "WHERE imas_libraries.deleted=0 GROUP BY imas_libraries.id";
+		$query .= "WHERE imas_libraries.deleted=0 GROUP BY imas_libraries.id ORDER BY imas_libraries.federationlevel DESC,imas_libraries.id";
 		$stm = $DBH->query($query);
 		$rights = array();
 		$sortorder = array();
@@ -589,6 +589,7 @@ if ($myrights<20) {
 			$sortorder[$id] = $line['sortorder'];
 			$ownerids[$id] = $line['ownerid'];
 			$groupids[$id] = $line['groupid'];
+			$federated[$id] = ($line['federationlevel']>0);
 		}
 
 		$page_appliesToMsg = (!$isadmin) ? "(Only applies to your libraries)" : "";
@@ -626,6 +627,9 @@ if ($overwriteBody==1) {
 	ul.base li {
 		border-bottom: 1px solid #ddd;
 		padding-top: 5px;
+	}
+	span.fedico {
+		color: #aaa;
 	}
 	</style>
 
@@ -676,7 +680,7 @@ if ($overwriteBody==1) {
     if ($isadmin) {
       echo '<span class=form>Federation: </span>';
       echo '<span class=formright>';
-      writeHtmlSelect("newfed",array(-1,0,1),array("Don't change","Not federated","Federated"));
+      writeHtmlSelect("newfed",array(-1,0,1,2),array("Don't change","Not federated","Federated","Federated, top of list"));
       echo '</span><br class=form>';
     }
     ?>
@@ -737,7 +741,7 @@ if ($overwriteBody==1) {
     if ($isadmin) {
       echo '<span class=form>Federation: </span>
       <span class=formright>';
-      writeHtmlSelect ("fedlevel",array(0,1),array('Not federated','Federated'),$fedlevel);
+      writeHtmlSelect ("fedlevel",array(0,1,2),array('Not federated','Federated','Federated, top of list'),$fedlevel);
       echo '</span><br class=form>';
     }
 
@@ -850,7 +854,7 @@ function delqimgs($qsid) {
 }
 
 function printlist($parent) {
-	global $names,$ltlibs,$count,$qcount,$cid,$rights,$sortorder,$ownerids,$userid,$isadmin,$groupids,$groupid,$isgrpadmin;
+	global $names,$ltlibs,$count,$qcount,$cid,$rights,$sortorder,$ownerids,$userid,$isadmin,$groupids,$groupid,$isgrpadmin,$federated;
 	$arr = $ltlibs[$parent];
 	if ($sortorder[$parent]==1) {
 		$orderarr = array();
@@ -872,7 +876,11 @@ function printlist($parent) {
 			if (isset($ltlibs[$child])) { //library has children
 				//echo "<li><input type=button id=\"b$count\" value=\"-\" onClick=\"toggle($count)\"> {$names[$child]}";
 				echo "<li class=lihdr><span class=dd>-</span><span class=hdr onClick=\"toggle(" . Sanitize::encodeStringForJavascript($child) . ")\"><span class=btn id=\"b" . Sanitize::encodeStringForDisplay($child) . "\">+</span> ";
-				echo "</span><input type=checkbox name=\"nchecked[]\" value=" . Sanitize::encodeStringForDisplay($child) . "> <span class=hdr onClick=\"toggle(" . Sanitize::encodeStringForJavascript($child) . ")\"><span class=\"r" . Sanitize::encodeStringForDisplay($rights[$child]) . "\">" . Sanitize::encodeStringForDisplay($names[$child]) . "</span> </span>\n";
+				echo "</span><input type=checkbox name=\"nchecked[]\" value=" . Sanitize::encodeStringForDisplay($child) . "> <span class=hdr onClick=\"toggle(" . Sanitize::encodeStringForJavascript($child) . ")\"><span class=\"r" . Sanitize::encodeStringForDisplay($rights[$child]) . "\">" . Sanitize::encodeStringForDisplay($names[$child]) ;
+				if ($federated[$child]) {
+					echo ' <span class=fedico title="Federated">&lrarr;</span>';
+				}
+				echo "</span> </span>\n";
 				//if ($isadmin) {
 				  echo " ({$qcount[$child]}) ";
 				//}
@@ -889,7 +897,11 @@ function printlist($parent) {
 
 			} else {  //no children
 
-				echo "<li><span class=dd>-</span><input type=checkbox name=\"nchecked[]\" value=" . Sanitize::encodeStringForDisplay($child) . "> <span class=\"r" . Sanitize::encodeStringForDisplay($rights[$child]) . "\">" . Sanitize::encodeStringForDisplay($names[$child]) . "</span> ";
+				echo "<li><span class=dd>-</span><input type=checkbox name=\"nchecked[]\" value=" . Sanitize::encodeStringForDisplay($child) . "> <span class=\"r" . Sanitize::encodeStringForDisplay($rights[$child]) . "\">" . Sanitize::encodeStringForDisplay($names[$child]);
+				if ($federated[$child]) {
+					echo ' <span class=fedico title="Federated">&lrarr;</span>';
+				}
+				echo "</span> ";
 				//if ($isadmin) {
 				  echo " ({$qcount[$child]}) ";
 				//}
