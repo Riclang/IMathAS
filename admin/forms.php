@@ -853,24 +853,26 @@ switch($_GET['action']) {
 		$query .= "OR pulls.id IS NULL";
 		$stm = $DBH->query($query);
 		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
-			$lastpull = $row['lastpull'] > 0 ? tzdate("n/j/y", $row['lastpull']) : 'Never';
-			$uspull = $row['uspull'] === null ? 'Never' : tzdate("n/j/y", $row['uspull']);
+			$lastpull = $row['lastpull'] > 0 ? tzdate("n/j/y", $row['lastpull']) : _('Never');
+			$uspull = $row['uspull'] === null ? _('Never') : tzdate("n/j/y", $row['uspull']);
 
 			printf("<tr><td>%s</td><td>%s</td>", Sanitize::encodeStringForDisplay($row['peername']),
 				Sanitize::encodeStringForDisplay($row['peerdescription']));
-			echo '<td>'.($row['lastpull']>0?tzdate("n/j/y", $row['lastpull']):'Never').'</td>';
-			echo '<td>'.($row['uspull']===null?'Never':tzdate("n/j/y", $row['uspull']));
+			echo '<td>'.Sanitize::encodeStringForDisplay($lastpull).'</td>';
+			echo '<td>'.Sanitize::encodeStringForDisplay($uspull);
 			if ($row['uspull']!==null && $row['step']<99) {
-				echo '<br/>Incomplete. <a href="federationpull.php?peer='.Sanitize::onlyInt($row['id']).'">'._('Continue').'</a>.';
+				echo '<br/>'._('Incomplete').'. <a href="federationpull.php?peer='.Sanitize::onlyInt($row['id']).'">'._('Continue').'</a>.';
 			}
 			echo '</td>';
-			printf('<td><a href="forms.php?action=modfedpeers&id=%d">Modify</a></td>\n', $row['id']);
-			printf("<td><a href=\"actions.php?action=delfedpeers&id=%d\" onclick=\"return confirm('Are you sure?');\">Delete</a></td>\n", $row['id']);
+			printf('<td><a href="forms.php?action=modfedpeers&id=%d&from=%s">', $row['id'], Sanitize::encodeUrlParam($from));
+			echo _('Modify'),'</a></td>';
+			printf("<td><a href=\"actions.php?action=delfedpeers&id=%d&from=%s\" onclick=\"return confirm('Are you sure?');\">", $row['id'],  Sanitize::encodeUrlParam($from));
+			echo _('Delete'),'</a></td>';
 			echo '<td><a href="federationpull.php?peer='.Sanitize::onlyInt($row['id']).'&stage=-1">'._('Start New Pull').'</a></td>';
 			echo "</tr>\n";
 		}
 		echo "</table>\n";
-		echo "<form method=post action=\"actions.php?id=new\">\n";
+		echo "<form method=post action=\"actions.php?id=new&from=".Sanitize::encodeUrlParam($from)."\">\n";
 		echo "<p>Add new federation peer: <br/>";
 		echo '<input type="hidden" name="action" value="modfedpeers" />';
 		echo "Install Name: <input type=text name=\"peername\" size=20><br/>\n";
@@ -891,7 +893,7 @@ switch($_GET['action']) {
 		$stm = $DBH->prepare("SELECT id,peername,peerdescription,url,secret,lastpull FROM imas_federation_peers WHERE id=:id");
 		$stm->execute(array(':id'=>$_GET['id']));
 		$row = $stm->fetch(PDO::FETCH_ASSOC);
-		printf("<form method=post action=\"actions.php?id=%d\">\n", Sanitize::onlyInt($row['id']));
+		printf("<form method=post action=\"actions.php?id=%d&from=%s\">\n", Sanitize::onlyInt($row['id']), Sanitize::encodeUrlParam($from));
 		echo "Modify federation peer: <br/>";
 		echo '<input type="hidden" name="action" value="modfedpeers" />';
 		printf("Install Name: <input type=text name=\"peername\" value=\"%s\" size=20><br/>\n",
