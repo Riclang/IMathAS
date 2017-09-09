@@ -231,6 +231,7 @@ function importdata($data, $cid, $checked, $options) {
 	$qsmap = array();
 	$toresolve = array();
 	$qimgs = array();
+	$qmodcnt = 0;
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		//set up map of export id => local id
 		$exportqid = $qsuidmap[$row['uniqueid']];
@@ -252,7 +253,7 @@ function importdata($data, $cid, $checked, $options) {
 			}
 			$exarr[] = $row['id'];
 			$update_qset_stm->execute($exarr);
-			
+			$qmodcnt++;
 			if (isset($data['questionset'][$exportqid]['dependencies'])) {
 				$toresolve[] = $exportqid;
 			}
@@ -816,8 +817,17 @@ function importdata($data, $cid, $checked, $options) {
 		$stm->execute($exarr);
 	}
 	
-	//8 hrs
-	
-	
+	return array(
+		'Questions Added'=>count($qstoadd),
+		'Questions Updated'=>$qmodcnt,
+		'InlineText Imported'=>count($typemap['InlineText']),
+		'Linked Imported'=>count($typemap['LinkedText']),
+		'Forums Imported'=>count($typemap['Forum']),
+		'Assessments Imported'=>count($typemap['Assessment']),
+		'Drills Imported'=>count($typemap['Drill']),
+		'Wikis Imported'=>count($typemap['Wiki'])
+		);
+		
+		
 }
 
