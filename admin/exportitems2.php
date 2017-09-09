@@ -67,16 +67,18 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 
 	$checked = $_POST['checked'];
 	$output = array();
+	$output['sourceinstall'] = $installname;
 	
 	//get gbcats
 	$gbcats = array(); $gbmap = array(0=>0);
 	if (isset($_POST['exportgbsetup'])) {
-		$stm = $DBH->prepare("SELECT ".$db_fields['gbcats']." FROM imas_gbcats WHERE courseid=:courseid");
+		$stm = $DBH->prepare("SELECT id,".$db_fields['gbcats']." FROM imas_gbcats WHERE courseid=:courseid");
 		$stm->execute(array(':courseid'=>$cid));
 		$gbcnt = 1;
-		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {	
-			$gbcats[$gbcnt] = $row;
+		while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 			$gbmap[$row['id']] = $gbcnt;
+			unset($row['id']);
+			$gbcats[$gbcnt] = $row;
 			$gbcnt++;
 		}
 		$output['gbcats'] = $gbcats;
@@ -96,7 +98,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 	$stm->execute(array(':id'=>$cid));
 	$line = $stm->fetch(PDO::FETCH_ASSOC);
 	$items = unserialize($line['itemorder']);
-	$itemcnt = 0;
+	$itemcnt = 1;
 	$toexport = array();
 	$itembackmap = array();
 	$qcnt = 0;
@@ -217,6 +219,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 					for ($i=0;$i<count($files)/2;$i++) {
 						$files[2*$i+1] = getuserfileurl('ffiles/'.$line['forumid'].'/'.$files[2*$i+1]);
 					}
+					$line['files'] = $files;
 				}
 				//remap forum id
 				$line['forumid'] = $forummap[$line['forumid']];
@@ -408,17 +411,21 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 		$ph = Sanitize::generateQueryPlaceholders($toget);
 		
 		//look up any include___from's
-		$query = "SELECT control,qtext FROM imas_questionset WHERE id IN ($ph)";
+		$query = "SELECT id,control,qtext FROM imas_questionset WHERE id IN ($ph)";
 		$query .= " AND (control LIKE '%includecodefrom%' OR qtext LIKE '%includeqtextfrom%')";
 		$stm = $DBH->prepare($query);
 		$stm->execute($toget);
 		$includedqs = array();
+		$dependencies = array();
 		while ($line = $stm->fetch(PDO::FETCH_ASSOC)) {
+			$dependencies[$line['id']] = array();
 			if (preg_match_all('/includecodefrom\((\d+)\)/',$line['control'],$matches,PREG_PATTERN_ORDER) >0) {
 				$includedqs = array_merge($includedqs,$matches[1]);
+				$dependencies[$line['id']] = array_merge($dependencies[$line['id']], $matches[1]);
 			}
 			if (preg_match_all('/includeqtextfrom\((\d+)\)/',$line['qtext'],$matches,PREG_PATTERN_ORDER) >0) {
 				$includedqs = array_merge($includedqs,$matches[1]);
+				$dependencies[$line['id']] = array_unique(array_merge($dependencies[$line['id']], $matches[1]));
 			}
 		}
 		$qstoadd = array_diff(array_unique($includedqs),$toget);
@@ -452,6 +459,13 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			//handle qimages
 			if ($line['hasimg']==1) {
 				$line['qimgs'] = $qimgmap[$line['id']];
+			}
+			if (isset($dependencies[$line['id']])) {
+				foreach ($dependencies[$line['id']] as $k=>$v) {
+					//remap dependencies
+					$dependencies[$line['id']][$k] = $qsmap[$v];
+				}
+				$line['dependencies'] = $dependencies[$line['id']];
 			}
 			unset($line['id']);
 			
@@ -554,8 +568,8 @@ if ($overwriteBody==1) {
 	<fieldset><legend>Options</legend>
 	<table>
 	<tbody>
-	<tr class="allon"><td class="r">Export course settings?</td><td><input type=checkbox name="exportcourseopt"  value="1" checked/></td></tr>
-	<tr class="allon"><td class="r">Export gradebook scheme and categories?</td><td>
+	<tr class="r"><td class="r">Export course settings?</td><td><input type=checkbox name="exportcourseopt"  value="1" checked/></td></tr>
+	<tr class="r"><td class="r">Export gradebook scheme and categories?</td><td>
 		<input type=checkbox name="exportgbsetup" value="1" checked/></td></tr>
 	<tr><td class="r">Export offline grade items?</td><td> <input type=checkbox name="exportoffline"  value="1"/></td></tr>
 	<tr><td class="r">Export calendar items?</td><td> <input type=checkbox name="exportcalitems"  value="1"/></td></tr>

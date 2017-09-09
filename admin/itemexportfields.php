@@ -1,7 +1,7 @@
 <?php
 
 $db_fields = array();
-$db_fields['gbcats'] = 'id,name,scale,scaletype,chop,dropn,weight,hidden,calctype';
+$db_fields['gbcats'] = 'name,scale,scaletype,chop,dropn,weight,hidden,calctype';
 $db_fields['gbscheme'] = 'useweights,orderby,defaultcat,defgbmode,usersort,stugbmode,colorize';
 $db_fields['offline'] = 'name,points,showdate,gbcategory,cntingb,tutoredit';
 $db_fields['calitems'] = 'date,title,tag';
@@ -24,3 +24,12 @@ $db_fields['drill'] = 'itemdescr,itemids,scoretype,showtype,n,showtostu,name,sum
 //includecodefrom(EID___) uses export ID
 $db_fields['questionset'] = 'uniqueid,adddate,lastmoddate,ownerid,author,userights,description,qtype,control,qcontrol,qtext,answer,hasimg,extref,deleted,broken,replaceby,solution,solutionopts,license,ancestorauthors,otherattribution';
 
+$db_fields['html'] = array(
+	'inlinetext'=>array('text'),
+	'linkedtext'=>array('summary','text'),
+	'forum'=>array('description','replyinstr','postinstr'),
+	'wiki'=>array('description'),
+	'assessment'=>array('summary'), //need to handle intro specially
+	'drill'=>array('summary'),
+	'forum_posts'=>array('message')
+);
