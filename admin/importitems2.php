@@ -61,54 +61,14 @@ if (!(isset($teacherid))) {
 	}
 
 
-	importdata($data, $cid, $_POST['checked'], $options);
-/*	
-	create function to do import
-		have create course option
-		
-	adjust $db_fields to only include items also in export
+	$res = importdata($data, $cid, $_POST['checked'], $options);
 	
-	use 'course' details if importcourseopt is set
-	use 'gbscheme' and 'gbcats' if importgbsetup is set
-		establish gbmap
-	do copysub, figuring out which items to import
-	resolve which questionsets to import (considering also dependencies)
-		import them or find local id, establish qsmap
-	foreach item type, import all the items (single insert if possible)
-	  	inlinetext: 
-			rehost all fileorder files: ['fileorder'][$i][1]
-		linkedtext: 
-			if 'rehostfile'==true, then copy and store local
-			if exttool:, explode('~~' and gbmap $parts[3] if isset
-		forum:
-			gbmap gbcategory
-			establish forummap
-		Drill:
-			$itemids is array; remap using qsmap then implode(','
-			
-		assessments:
-			remap gbcategory
-			remap posttoforum using forummap
-			if 'reqscoreaid'>0 then store id for later
-			insert all assessments, creating assessmap
-			insert all questions, 
-				remap questionsetid
-				use assessmap to set 'assessmentid'
-			remap itemorders, updating imas_assessments with itemorder
-	
-	insert imas_items, create course itemorder
-	
-	if importstickyposts is set, import 'stickyposts'
-		remap 'forumid' using forummap
-		add userid
-		'files' is array(descr, fileurl, ...).  Rehost.
-		create imas_threads
-	if importoffline is set, import 'offline']
-		remap gbcategory
-	if importcalitems is set, import 'calitems'	
-	
-*/	
-	header('Location: ' . $GLOBALS['basesiteurl'] . "/course/course.php?cid=$cid");
+	$overwriteBody = 1;
+	$body = '<h2>Import Results</h2><p>';
+	foreach ($res as $k=>$v) {
+		$body .= Sanitize::encodeStringForDisplay($k.': '.$v.'<br/>');
+	}
+	$body .= '</p><p><a href="../course/course.php?cid='.$cid.'">Done</a><p>';
 	
 } elseif ($_FILES['userfile']['name']!='') { 
 	//STEP 2 DATA MANIPULATION - parse input file
