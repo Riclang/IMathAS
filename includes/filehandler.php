@@ -84,6 +84,44 @@ function relocatefileifneeded($file, $key, $sec="public") {
 	}
 }
 
+//copies file at URL
+function rehostfile($url, $keydir, $sec="public") {
+	if (substr($url,0,4)!=='http') {return false;}
+	
+	$tmpdir = __dir__.'/../admin/import/tmp';
+	if (!is_dir($tmpdir)) {
+		mkdir($tmpdir);
+	}
+	$url = Sanitize::url($url);
+	$parseurl = parse_url($url);
+	$fn =  Sanitize::sanitizeFilenameAndCheckBlacklist(basename($parseurl['path']));
+	if ($GLOBALS['filehandertype'] == 's3') {
+		copy($url, $tmpdir.'/'.$fn);
+		if ($sec=="public" || $sec=="public-read") {
+			$sec = "public-read";
+		} else {
+			$sec = "private";
+		}
+		$s3 = new S3($GLOBALS['AWSkey'],$GLOBALS['AWSsecret']);
+		if ($s3->putObjectFile($tmpdir.'/'.$fn,$GLOBALS['AWSbucket'],$keydir.'/'.$fn,$sec)) {
+			unlink($tmpdir.'/'.$fn);
+			return $fn;
+		} else {
+			unlink($tmpdir.'/'.$fn);
+			return false;
+		}
+	} else {
+		$base = rtrim(dirname(dirname(__FILE__)), '/\\').'/filestore/';
+		$dir = $base.$keydir;
+		$fn = basename($key);
+		if (!is_dir($dir)) {
+			mkdir_recursive($dir);
+		}
+		copy($url, $dir.'/'.$fn);
+		return $fn;
+	}
+}
+
 function storeuploadedfile($id,$key,$sec="private") {
 	if ($GLOBALS['filehandertype'] == 's3') {
 		if ($sec=="public" || $sec=="public-read") {

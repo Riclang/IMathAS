@@ -311,6 +311,10 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 					$line['posttoforum'] = 0;
 				}
 			}
+			//unserialize endmsg
+			if ($line['endmsg']!='') {
+				$line['endmsg'] = unserialize($line['endmsg']);
+			}
 			//change itemorder into an array and remap question id
 			if ($line['itemorder']=='') {
 				$qs = array();

@@ -3,7 +3,7 @@
 //JSON edition
 //(c) 2017 David Lippman
 
-require_once("../includes/htmlawed.php");
+require_once("../includes/htmLawed.php");
 
 //get item info for confirmation step
 function getsubinfo($items,$parent,$pre) {
@@ -311,11 +311,14 @@ function importdata($data, $cid, $checked, $options) {
 	foreach ($qimgs as $eqsid->$qimgarr) {
 		$todelqimg[] = $qsmap[$eqsid];
 		foreach ($qimgarr as $v) {
-			$exarr[] = $qsmap[$eqsid];
-			$exarr[] = $v['var'];
-			//TODO:  Rehost image
-			$exarr[] = $v['filename'];
-			$exarr[] = $v['alttext'];
+			//rehost image.  prepend with question ID to prevent conflicts
+			$newfn = rehostfile($v['filename'], 'qimages', $qsmap[$eqsid].'-');
+			if ($newfn!==false) {
+				$exarr[] = $qsmap[$eqsid];
+				$exarr[] = $v['var'];
+				$exarr[] = $newfn;
+				$exarr[] = $v['alttext'];
+			}
 		}
 	}
 	if (count($exarr)>0) {
@@ -400,10 +403,13 @@ function importdata($data, $cid, $checked, $options) {
 		$exarr = array();
 		foreach ($toresolve as $tohandle) {
 			foreach($data['items'][$tohandle]['data']['fileorder'] as $filearr) {
-				$exarr[] = $filearr[0]; //description
-				//TODO:  rehost file
-				$exarr[] = $filearr[1]; //filename 
-				$exarr[] = $typemap['InlineText'][$tohandle];
+				//rehost file
+				$newfn = rehostfile($filearr[1], 'cfiles/'.$cid);
+				if ($newfn!==false) {
+					$exarr[] = $filearr[0]; //description
+					$exarr[] = $cid.'/'.$newfn; //filename 
+					$exarr[] = $typemap['InlineText'][$tohandle];
+				}
 			}
 		}
 		if (count($exarr)>0) {
@@ -430,8 +436,13 @@ function importdata($data, $cid, $checked, $options) {
 		$exarr = array();
 		$db_fields['linkedtext'] = array_values(array_intersect($db_fields['linkedtext'], array_flip($data['items'][$toimportbytype['LinkedText'][0]]['data'])));
 		foreach ($toimportbytype['LinkedText'] as $toimport) {
-			if ($data['items'][$toimport]['rehostfile']==true) {
-				//TODO:  rehost file and change weblink to file:	
+			if ($data['items'][$toimport]['rehostfile']==true && substr($data['items'][$toimport]['data']['text'],0,4)=='http') {
+				//rehost file and change weblink to file:
+				$fileurl = substr($data['items'][$toimport]['data']['text'],5);
+				$newfn = rehostfile($fileurl, 'cfiles/'.$cid);
+				if ($newfn!==false) {
+					$data['items'][$toimport]['data']['text'] = 'file:'.$cid.'/'.$newfn;	
+				}	
 			} else if (substr($data['items'][$toimport]['data']['text'],0,8)=='exttool:') {
 				//remap gbcategory
 				$parts = explode('~~',substr($data['items'][$toimport]['data']['text'],8));
@@ -587,7 +598,18 @@ function importdata($data, $cid, $checked, $options) {
 				}
 				$data['items'][$toimport]['data']['intro'] = json_encode($introjson);
 			}
-				
+			//Sanitize endmsg
+			if (is_array($data['items'][$toimport]['data']['endmsg'])) {
+				$endmsgdata = $data['items'][$toimport]['data']['endmsg'];
+				$endmsgdata['commonmsg'] = myhtmLawed($endmsgdata['commonmsg']);
+				$endmsgdata['def'] = myhtmLawed($endmsgdata['def']);
+				foreach (array_keys($endmsgdata['msgs']) as $k) {
+					$endmsgdata['msgs'][$k] = myhtmLawed($endmsgdata['msgs'][$k]);
+				}
+				$data['items'][$toimport]['data']['endmsg'] = serialize($endmsgdata);
+			} else {
+				$data['items'][$toimport]['data']['endmsg'] = '';
+			}
 			//we'll resolve these later
 			$thisitemdata['reqscoreaid'] = 0;
 			$thisitemdata['itemorder'] = '';
@@ -718,8 +740,20 @@ function importdata($data, $cid, $checked, $options) {
 			foreach ($db_fields['html']['forum_posts'] as $field) {
 				$toimport[$field] = myhtmlawed($toimport[$field]);
 			}
-			//TODO: rehost files
-			$toimport['files'] = implode('@@',$toimport['files']);
+			//rehost files
+			if (is_array($toimport['files'])) {
+				$newfiles = array();
+				for ($i=0;$i<count($toimport['files'])/2;$i++) {
+					$newfn = rehostfile($toimport['files'][2*$i+1], 'ffiles/'.$typemap['Forum'][$toimport['forumid']]);
+					if ($newfn!==false) {
+						$newfiles[2*$i] = $toimport['files'][2*$i];
+						$newfiles[2*$i+1] = $newfn; 
+					}
+				}
+				$toimport['files'] = implode('@@', $newfiles);
+			} else {
+				$toimport['files'] = '';
+			}
 			//add in owner and postdate, then rest of fields
 			$exarr[] = $importowner;
 			$exarr[] = $now;
