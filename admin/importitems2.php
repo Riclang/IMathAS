@@ -60,8 +60,8 @@ if (!(isset($teacherid))) {
 		$options['importlib'] = $libs[0];
 	}
 
-
-	$res = importdata($data, $cid, $_POST['checked'], $options);
+	$importer = new ImportItemClass();
+	$res = $importer->importdata($data, $cid, $_POST['checked'], $options);
 	
 	$overwriteBody = 1;
 	$body = '<h2>Import Results</h2><p>';
