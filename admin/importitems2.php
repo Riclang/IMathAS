@@ -66,7 +66,7 @@ if (!(isset($teacherid))) {
 	$overwriteBody = 1;
 	$body = '<h2>Import Results</h2><p>';
 	foreach ($res as $k=>$v) {
-		$body .= Sanitize::encodeStringForDisplay($k.': '.$v.'<br/>');
+		$body .= Sanitize::encodeStringForDisplay($k.': '.$v).'<br/>';
 	}
 	$body .= '</p><p><a href="../course/course.php?cid='.$cid.'">Done</a><p>';
 	

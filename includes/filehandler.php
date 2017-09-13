@@ -92,7 +92,7 @@ function rehostfile($url, $keydir, $sec="public") {
 	if (!is_dir($tmpdir)) {
 		mkdir($tmpdir);
 	}
-	$url = Sanitize::url($url);
+	//TODO: $url = Sanitize::url($url);
 	$parseurl = parse_url($url);
 	$fn =  Sanitize::sanitizeFilenameAndCheckBlacklist(basename($parseurl['path']));
 	if ($GLOBALS['filehandertype'] == 's3') {

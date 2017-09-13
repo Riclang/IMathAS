@@ -249,7 +249,7 @@ private function copysub($items,$parent,&$addtoarr) {
 				$newblock['id'] = $this->blockcnt;
 				$this->blockcnt++;
 				foreach ($db_fields['block'] as $field) {
-					$newblock[$field] = $item[$field];
+					$newblock[$field] = $anitem[$field];
 				}
 				$newblock['items'] = array();
 				$this->copysub($anitem['items'],$parent.'-'.($k+1),$newblock['items']);
@@ -589,11 +589,13 @@ private function insertLinked() {
 	foreach ($this->toimportbytype['LinkedText'] as $toimport) {
 		if ($this->data['items'][$toimport]['rehostfile']==true && substr($this->data['items'][$toimport]['data']['text'],0,4)=='http') {
 			//rehost file and change weblink to file:
-			$fileurl = substr($this->data['items'][$toimport]['data']['text'],5);
-			$newfn = rehostfile($fileurl, 'cfiles/'.$this->cid);
+			$newfn = rehostfile($this->data['items'][$toimport]['data']['text'], 'cfiles/'.$this->cid);
 			if ($newfn!==false) {
 				$this->data['items'][$toimport]['data']['text'] = 'file:'.$this->cid.'/'.$newfn;	
-			}	
+			}else {
+				echo "fail on rehost";
+				exit;
+			}
 		} else if (substr($this->data['items'][$toimport]['data']['text'],0,8)=='exttool:') {
 			//remap gbcategory
 			$parts = explode('~~',substr($this->data['items'][$toimport]['data']['text'],8));

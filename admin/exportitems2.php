@@ -223,7 +223,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 				}
 				//remap forum id
 				$line['forumid'] = $forummap[$line['forumid']];
-				$output['stickyposts'] = $line;
+				$output['stickyposts'][] = $line;
 			}
 		}
 	}
