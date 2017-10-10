@@ -3,6 +3,7 @@
 //(c) 2006 David Lippman
 require("../init.php");
 require("../header.php");
+require("../includes/htmlutil.php");
 
 $from = 'admin2';
 $backloc = 'admin2.php';
@@ -199,7 +200,7 @@ switch($_GET['action']) {
 			echo '<input type="checkbox" name="specialrights32" id="specialrights32" ';
 			if (($oldspecialrights&32)==32) { echo 'checked';}
 			echo '><label for="specialrights32">Create new instructor accounts (any group)</label><br/>';
-			
+
 			echo '<input type="checkbox" name="specialrights64" id="specialrights64" ';
 			if (($oldspecialrights&64)==64) { echo 'checked';}
 			echo '><label for="specialrights64">Approve instructor account requests</label><br/>';
@@ -330,6 +331,34 @@ switch($_GET['action']) {
 		}
 		if ($_GET['action']=="modify") { echo "&id=".Sanitize::encodeUrlParam($_GET['id']); }
 		echo "\">\n";
+		echo '<script type="text/javascript">
+		$(function() {
+			$("form").on("submit",function(e) {
+				var needsgrp = $("input[name=isgrptemplate]:checked").length;
+				var needsall = $("input[name=istemplate]:checked,input[name=isselfenroll]:checked").length;
+
+				var copyrights = $("input[name=copyrights]:checked").val();
+				var ok = true;
+				if (copyrights<2 && $("input[name=promote]:checked").length>0) {
+					alert(_("Promoting a course requires setting the copy permissions to: no key required for anyone"));
+					ok = false;
+				}
+				if (copyrights<2 && needsall>0) {
+					alert(_("Setting a course as a template or self enroll requires setting the copy permissions to: no key required for anyone"));
+					ok = false;
+				}
+				if (copyrights<1 && needsgrp) {
+					alert(_("Setting a course as a group template requires setting the copy permissions to: no key required for group (or no key required for anyone)"));
+					ok = false;
+				}
+				if (!ok) {
+					console.log("here1");
+					setTimeout(1000,function() {console.log("here");$("form").removeClass("submitted").removeClass("submitted2");});
+					return false;
+				}
+			});
+		})
+		</script>';
 		echo '<input type=hidden name=action value="'.Sanitize::encodeStringForDisplay($_GET['action']) .'" />';
 		echo "<span class=form>Course ID:</span><span class=formright>".Sanitize::encodeStringForDisplay($courseid)."</span><br class=form>\n";
 		if ($isadminview) {
@@ -489,6 +518,7 @@ switch($_GET['action']) {
 			}
 			echo '</span></span><br class="form" />';
 		}
+
 		if (($myspecialrights&1)==1 || ($myspecialrights&2)==2 || $myrights==100) {
 			echo '<span class="form">Mark course as template?</span>';
 			echo '<span class="formright">';
@@ -513,6 +543,80 @@ switch($_GET['action']) {
 				}
 			}
 			echo '</span><br class="form" />';
+		}
+		$CFG['browser']['books'] = array('dl'=>'Lippman Math in Society','pc'=>'Stitz / Zeager precalc');
+		if ($_GET['action']=='modify' && isset($CFG['browser'])) {
+			echo '<script type="text/javascript">
+				function changepromote() {
+					$("#promotediv").toggle($("input[name=promote]").prop("checked"));
+				}
+				function chgother(el) {
+					var id = el.id;
+					if (el.value != "other") {
+						$("#"+id+"other").val("");
+					}
+				}
+			</script>';
+			echo '<span class="form">'._('Promote Course').'</span>';
+			echo '<span class=formright><input type=checkbox name=promote value=1 onchange="changepromote()" ';
+			if (($istemplate&16)==16) {echo 'checked="checked"';};
+			echo ' /> '._('Promote in Course Browser').'</span><br class="form">';
+			echo '<fieldset id=promotediv '.((($istemplate&16)==16)?'':'style="display:none"').'>';
+			echo '<legend>'._('Course Browser Settings').'</legend>';
+			echo '<span class=form>'._('Course display name').'</span>';
+			echo '<span class=formright><input type=text name=browsername size=50 value="';
+			if (!empty($browser['name'])) {
+				echo Sanitize::encodeStringForDisplay($browser['name']);
+			} else {
+				echo Sanitize::encodeStringForDisplay(trim($name));
+			}
+			echo '"/></span><br class="form">';
+			if (isset($CFG['browser']['levels'])) {
+				$levels = $CFG['browser']['levels'];
+			} else {
+				$levels = array('arith'=>'Arithmetic (no variables)',
+					'prealg'=>'Prealgebra',
+					'elemalg'=>'Elementary Algebra',
+					'intalg'=>'Intermediate Algebra',
+					'mathlit'=>'Non-STEM Algebra / Math Literacy',
+					'precalc'=>'College Algebra / Precalculus',
+					'trig'=>'Trigonometry',
+					'calc'=>'Calculus',
+					'diffeq'=>'Differential Equations',
+					'linalg'=>'Linear Algebra',
+					'stats'=>'Statistics',
+					'qr'=>'Math for Liberal Arts / Quantitative Reasonsing',
+					'other'=>'Other'
+				);
+			}
+			echo '<span class=form>'._('Course level').'</span>';
+			echo '<span class=formright>';
+			writeHtmlSelect("browserlvl", array_keys($levels), array_values($levels), $browser['level'],null,null,'onchange="chgother(this)"');
+			echo '<br/>Other: <input type=text size=40 name=browserlvlother value="'.($browser['level']=='other'?Sanitize::encodeStringForDisplay($browser['levelother']):'').'"></span><br class=form>';
+
+			if (isset($CFG['browser']['books'])) {
+				echo '<span class=form>'._('Primary textbook').'</span>';
+				echo '<span class=formright>';
+				writeHtmlSelect("browserbook", array_keys($CFG['browser']['books']), array_values($CFG['browser']['books']), $browser['book'],null,null,'onchange="chgother(this)"');
+				echo '<br/>Other: <input type=text size=40 name=browserbookother value="'.($browser['level']=='other'?Sanitize::encodeStringForDisplay($browser['bookother']):'').'"></span><br class=form>';
+			}
+
+			if (isset($CFG['browser']['modalities'])) {
+				$modes = $CFG['browser']['modalities'];
+			} else {
+				$modes = array('class'=>'Classroom instruction',
+					'hybrid'=>'Hybrid',
+					'online'=>'Fully online',
+					'lab'=>'Emportium');
+			}
+			echo '<span class=form>'._('Course modality').'</span>';
+			echo '<span class=formright>';
+			writeHtmlSelect("browsermode", array_keys($modes), array_values($modes), $browser['mode']);
+			echo '</span><br class=form>';
+
+			echo '<span class=form>'._('Description of the course').'</span>';
+			echo '<span class=formright><textarea rows=6 cols=50 name=browserdescrip>'.Sanitize::encodeStringForDisplay($browser['descrip']).'</textarea></span><br class=form>';
+			echo '</fieldset>';
 		}
 
 		if (isset($CFG['CPS']['templateoncreate']) && $_GET['action']=='addcourse' ) {
