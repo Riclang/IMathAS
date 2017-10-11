@@ -275,6 +275,12 @@ switch($_GET['action']) {
 			$istemplate = $line['istemplate'];
 			$deflatepass = $line['deflatepass'];
 			$deftime = $line['deftime'];
+			$jsondata = json_decode($line['jsondata'], true);
+			if ($jsondata===null || !isset($jsondata['browser'])) {
+				$browser = array();
+			} else {
+				$browser = $jsondata['browser'];
+			}
 		} else {
 			$courseid = _("Will be assigned when the course is created");
 			$name = "Enter course name here";
@@ -298,6 +304,7 @@ switch($_GET['action']) {
 			$deftime = isset($CFG['CPS']['deftime'])?$CFG['CPS']['deftime'][0]:600;
 			$deflatepass = isset($CFG['CPS']['deflatepass'])?$CFG['CPS']['deflatepass'][0]:0;
 			$ltisecret = "";
+			$browser = array();
 		}
 		$defetime = $deftime%10000;
 		$hr = floor($defetime/60)%12;
@@ -352,8 +359,9 @@ switch($_GET['action']) {
 					ok = false;
 				}
 				if (!ok) {
-					console.log("here1");
-					setTimeout(1000,function() {console.log("here");$("form").removeClass("submitted").removeClass("submitted2");});
+					setTimeout(function() {
+						$("form").removeClass("submitted").removeClass("submitted2");
+					}, 500);
 					return false;
 				}
 			});
@@ -574,7 +582,7 @@ switch($_GET['action']) {
 			if (isset($CFG['browser']['levels'])) {
 				$levels = $CFG['browser']['levels'];
 			} else {
-				$levels = array('arith'=>'Arithmetic (no variables)',
+				$levels = array('arith'=>'Arithmetic',
 					'prealg'=>'Prealgebra',
 					'elemalg'=>'Elementary Algebra',
 					'intalg'=>'Intermediate Algebra',
@@ -591,7 +599,7 @@ switch($_GET['action']) {
 			}
 			echo '<span class=form>'._('Course level').'</span>';
 			echo '<span class=formright>';
-			writeHtmlSelect("browserlvl", array_keys($levels), array_values($levels), $browser['level'],null,null,'onchange="chgother(this)"');
+			writeHtmlSelect("browserlevel", array_keys($levels), array_values($levels), $browser['level'],null,null,'onchange="chgother(this)"');
 			echo '<br/>Other: <input type=text size=40 name=browserlvlother value="'.($browser['level']=='other'?Sanitize::encodeStringForDisplay($browser['levelother']):'').'"></span><br class=form>';
 
 			if (isset($CFG['browser']['books'])) {

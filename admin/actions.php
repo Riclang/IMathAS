@@ -431,11 +431,30 @@ switch($_POST['action']) {
 				$istemplate += 8;
 			}
 		}
+		if (isset($_POST['promote']) && isset($_GET['id']) && trim($_POST['browsername'])!='' && trim($_POST['browserdescrip'])!='') {
+			$istemplate += 16;
+
+			$stm = $DBH->prepare("SELECT jsondata FROM imas_courses WHERE id=:id");
+			$stm->execute(array(':id'=>$_GET['id']));
+			$jsondata = json_decode($stm->fetchColumn(0), true);
+			if ($jsondata===null) {
+				$jsondata = array();
+			}
+			$jsondata['browser'] = array();
+			$jsondata['browser']['name'] = Sanitize::stripHtmlTags($_POST['browsername']);
+			$jsondata['browser']['level'] = $_POST['browserlevel'];
+			$jsondata['browser']['book'] = $_POST['browserbook'];
+			$jsondata['browser']['mode'] = $_POST['browsermode'];
+			$jsondata['browser']['descrip'] = Sanitize::incomingHtml($_POST['browserdescrip']);
+		}
 
 		$_POST['ltisecret'] = trim($_POST['ltisecret']);
 
 		if ($_POST['action']=='modify') {
 			$query = "UPDATE imas_courses SET name=:name,enrollkey=:enrollkey,hideicons=:hideicons,available=:available,lockaid=:lockaid,picicons=:picicons,showlatepass=:showlatepass,";
+			if (($istemplate&16)==16) {
+				$query .= "jsondata=:jsondata,";
+			}
 			$query .= "allowunenroll=:allowunenroll,copyrights=:copyrights,msgset=:msgset,toolset=:toolset,theme=:theme,ltisecret=:ltisecret,istemplate=:istemplate,deftime=:deftime,deflatepass=:deflatepass WHERE id=:id";
 			$qarr = array(':name'=>$_POST['coursename'], ':enrollkey'=>$_POST['ekey'], ':hideicons'=>$hideicons, ':available'=>$avail, ':lockaid'=>$_POST['lockaid'],
 				':picicons'=>$picicons, ':showlatepass'=>$showlatepass, ':allowunenroll'=>$unenroll, ':copyrights'=>$copyrights, ':msgset'=>$msgset,
@@ -444,6 +463,9 @@ switch($_POST['action']) {
 			if ($myrights<75) {
 				$query .= " AND ownerid=:ownerid";
 				$qarr[':ownerid']=$userid;
+			}
+			if (($istemplate&16)==16) {
+				$qarr[':jsondata'] = json_encode($jsondata);
 			}
 			$stm = $DBH->prepare($query);
 			$stm->execute($qarr);
