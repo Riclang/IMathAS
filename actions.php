@@ -25,51 +25,21 @@ require_once("includes/sanitize.php");
 
 	if ($_GET['action']=="newuser") {
 		require_once("init_without_validate.php");
+		require_once("includes/newusercommon.php");
 		$error = '';
 		if (isset($studentTOS) && !isset($_POST['agree'])) {
 			$error = "<p>You must agree to the Terms and Conditions to set up an account</p>";
 		}
 
 		// Sanitize form data
-		function checkFormatAgainstRegex($val, $regexs) {
-			if (!is_array($regexs)) {
-				$regexs = array($regexs);
-			}
-			$isok = true;
-			foreach ($regexs as $regex) {
-				$isok = $isok && preg_match($regex, $val);
-			}
-			return $isok;
-		}
+
 		$_POST['SID'] = Sanitize::stripHtmlTags(trim($_POST['SID']));
 		$_POST['email'] = Sanitize::emailAddress(trim($_POST['email']));
 		$_POST['firstname'] = Sanitize::stripHtmlTags(trim($_POST['firstname']));
 		$_POST['lastname'] = Sanitize::stripHtmlTags(trim($_POST['lastname']));
-		if ($loginformat != '' && !checkFormatAgainstRegex($_POST['SID'], $loginformat)) {
-			$error .= "<p>$loginprompt is invalid.</p>";
-		}
-		//DB $query = "SELECT id FROM imas_users WHERE SID='{$_POST['SID']}'";
-		//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
-		//DB if (mysql_num_rows($result)>0) {
-		$stm = $DBH->prepare('SELECT id FROM imas_users WHERE SID=:sid');
-		$stm->execute(array(':sid'=>$_POST['SID']));
-		if ($stm->rowCount()>0) {
-			$error .= "<p>$loginprompt '" . Sanitize::encodeStringForDisplay($_POST['SID']) . "' is used. </p>";
-		}
 		
-		if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/',$_POST['email']) ||
-			(isset($CFG['acct']['emailFormat']) && !checkFormatAgainstRegex($_POST['SID'], $CFG['acct']['emailFormat']))) {
-			$error .= "<p>Invalid email address.</p>";
-		}
-		if (isset($CFG['acct']['passwordFormat']) && !checkFormatAgainstRegex($_POST['pw1'], $CFG['acct']['passwordFormat'])) {
-			$error .= "<p>Invalid password format. </p>";
-		}
-		if ($_POST['pw1'] != $_POST['pw2']) {
-			$error .= "<p>Passwords don't match. </p>";
-		}
-		if ($_POST['SID']=="" || $_POST['firstname']=="" || $_POST['lastname']=="" || $_POST['email']=="" || $_POST['pw1']=="") {
-			$error .= "<p>Please include all information.</p>";
-		}
+		$error .= checkNewUserValidation();
+
 		if ($error != '') {
 			require("header.php");
 			if ($gb == '') {
