@@ -446,6 +446,9 @@ switch($_POST['action']) {
 			$jsondata['browser']['book'] = $_POST['browserbook'];
 			$jsondata['browser']['mode'] = $_POST['browsermode'];
 			$jsondata['browser']['descrip'] = Sanitize::incomingHtml($_POST['browserdescrip']);
+			if (isset($_POST['browsercontenttypes'])) {
+				$jsondata['browser']['contenttypes'] = array_map('Sanitize::simpleString', $_POST['browsercontenttypes']);
+			}
 		}
 
 		$_POST['ltisecret'] = trim($_POST['ltisecret']);

@@ -557,6 +557,7 @@ switch($_GET['action']) {
 			echo '<script type="text/javascript">
 				function changepromote() {
 					$("#promotediv").toggle($("input[name=promote]").prop("checked"));
+					//TODO: Add required to name and descrip field on show
 				}
 				function chgother(el) {
 					var id = el.id;
@@ -622,6 +623,30 @@ switch($_GET['action']) {
 			writeHtmlSelect("browsermode", array_keys($modes), array_values($modes), $browser['mode']);
 			echo '</span><br class=form>';
 
+			//TODO:  Add "what's in it" checkboxes: assessments, video lists, textbook links
+			//
+			if (isset($CFG['browser']['contenttypes'])) {
+				$contenttypes = $CFG['browser']['contenttypes'];
+			} else {
+				$contenttypes = array('FA1'=>'Formative Assessments (homework; roughly 1 per week or chapter)',
+					'FA2'=>'Formative Assessments (homework; roughly 1 per day or section)',
+					'SA'=>'Summative Assessments (quizzes or exams)',
+					'V'=>'Video lists or video lessons',
+					'B'=>'Textbook files or links',
+					'PP'=>'PowerPoint slides',
+					'WS'=>'Worksheets or activities',
+					'I'=>'Instructor planning resources');
+			}
+			if (!isset($browser['contenttypes'])) {
+				$browser['contenttypes'] = array();
+			}
+			echo '<span class=form>'._('Materials in the course').'</span>';
+			echo '<span class=formright>';
+			foreach ($contenttypes as $k=>$v) {
+				echo '<label><input type=checkbox name="browsercontenttypes[]" value="'. Sanitize::encodeStringForDisplay($k).'" ';
+				echo (in_array($k,$browser['contenttypes'])?'Checked':'').' /> '.Sanitize::encodeStringForDisplay($v).'</label><br/>';
+			}
+			echo '</span><br class=form />';
 			echo '<span class=form>'._('Description of the course').'</span>';
 			echo '<span class=formright><textarea rows=6 cols=50 name=browserdescrip>'.Sanitize::encodeStringForDisplay($browser['descrip']).'</textarea></span><br class=form>';
 			echo '</fieldset>';
