@@ -143,8 +143,8 @@ switch($_GET['action']) {
 		echo '<span class="form"><label for="dochgpw">Change Password?</label></span> <span class="formright"><input type="checkbox" name="dochgpw" id="dochgpw" onclick="togglechgpw(this.checked)" /></span><br class="form" />';
 		echo '<div style="display:none" id="pwinfo">';
 		echo "<span class=form><label for=\"oldpw\">Enter old password:</label></span> <input class=form type=password id=oldpw name=oldpw size=40 /> <BR class=form>\n";
-		echo "<span class=form><label for=\"newpw1\">Enter new password:</label></span>  <input class=form type=password id=newpw1 name=newpw1 size=40> <BR class=form>\n";
-		echo "<span class=form><label for=\"newpw1\">Verify new password:</label></span>  <input class=form type=password id=newpw2 name=newpw2 size=40> <BR class=form>\n";
+		echo "<span class=form><label for=\"pw1\">Enter new password:</label></span>  <input class=form type=password id=pw1 name=pw1 size=40> <BR class=form>\n";
+		echo "<span class=form><label for=\"pw2\">Verify new password:</label></span>  <input class=form type=password id=pw2 name=pw2 size=40> <BR class=form>\n";
 		echo '</div>';
 		echo "<span class=form><label for=\"email\">Enter E-mail address:</label></span>  <input class=form type=text size=60 id=email name=email value=\"".Sanitize::emailAddress($line['email'])."\"><BR class=form>\n";
 		echo "<span class=form><label for=\"msgnot\">Notify me by email when I receive a new message:</label></span><span class=formright><input type=checkbox id=msgnot name=msgnot ";
@@ -287,8 +287,14 @@ switch($_GET['action']) {
 			echo '</fieldset>';
 
 		}
-
-		echo '<script type="text/javascript">
+		$requiredrules = array(
+			'oldpw'=>'{depends: function(element) {return $("#dochgpw").is(":checked")}}',
+			'pw1'=>'{depends: function(element) {return $("#dochgpw").is(":checked")}}',
+			'pw2'=>'{depends: function(element) {return $("#dochgpw").is(":checked")}}'
+		);
+		require_once("includes/newusercommon.php");
+		showNewUserValidation("pageform", array('oldpw'), $requiredrules);
+		/*echo '<script type="text/javascript">
 		$("#pageform").validate({
 			rules: {
 				oldpw: {
@@ -312,6 +318,7 @@ switch($_GET['action']) {
 			invalidHandler: function() {setTimeout(function(){$("#pageform").removeClass("submitted").removeClass("submitted2");}, 100)}}
 		);
 		</script>';
+		*/
 		echo "<div class=submit><input type=submit value='Update Info'></div>\n";
 
 		//echo '<p><a href="forms.php?action=googlegadget">Get Google Gadget</a> to monitor your messages and forum posts</p>';

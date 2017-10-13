@@ -1,7 +1,7 @@
 <?php
 //functions for common stuff across new user login pages
 
-function showNewUserValidation($formname, $extrarequired=array(), $requiredrules=array()) {
+function showNewUserValidation($formname, $extrarequired=array(), $requiredrules=array(), $options=array()) {
   global $loginformat, $CFG;
 
   if (is_array($loginformat)) {
@@ -20,7 +20,11 @@ function showNewUserValidation($formname, $extrarequired=array(), $requiredrules
       SID: {
         required: '.(isset($requiredrules['SID'])?$requiredrules['SID']:'true').',
         pattern: '.$loginformat.',
-        remote: imasroot+"/actions.php?action=checkusername"
+        remote: imasroot+"/actions.php?action=checkusername';
+        if (isset($options['originalSID'])) {
+          echo '&originalSID='.Sanitize::encodeUrlParam($options['originalSID']);
+        }
+        echo '"
       },
       pw1: {
         required: '.(isset($requiredrules['pw1'])?$requiredrules['pw1']:'true').',';

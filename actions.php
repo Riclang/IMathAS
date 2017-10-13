@@ -37,7 +37,7 @@ require_once("includes/sanitize.php");
 		$_POST['email'] = Sanitize::emailAddress(trim($_POST['email']));
 		$_POST['firstname'] = Sanitize::stripHtmlTags(trim($_POST['firstname']));
 		$_POST['lastname'] = Sanitize::stripHtmlTags(trim($_POST['lastname']));
-		
+
 		$error .= checkNewUserValidation();
 
 		if ($error != '') {
@@ -410,7 +410,10 @@ require_once("includes/sanitize.php");
 		}
 	} else if ($_GET['action']=="checkusername") {
 		require_once("init_without_validate.php");
-
+		if (isset($_GET['originalSID']) && $_GET['originalSID']==$_GET['SID']) {
+			echo "true";
+			exit;
+		}
 		$stm = $DBH->prepare("SELECT id FROM imas_users WHERE SID=:SID");
 		$stm->execute(array(':SID'=>$_GET['SID']));
 		if ($stm->rowCount()>0) {
@@ -755,11 +758,11 @@ require_once("includes/sanitize.php");
 			$stm = $DBH->prepare("SELECT password FROM imas_users WHERE id = :uid");
 			$stm->execute(array(':uid'=>$userid));
 			$line = $stm->fetch(PDO::FETCH_ASSOC);
-			if ((md5($_POST['oldpw'])==$line['password'] || (isset($CFG['GEN']['newpasswords']) && password_verify($_POST['oldpw'],$line['password']))) && ($_POST['newpw1'] == $_POST['newpw2']) && $myrights>5) {
+			if ((md5($_POST['oldpw'])==$line['password'] || (isset($CFG['GEN']['newpasswords']) && password_verify($_POST['oldpw'],$line['password']))) && ($_POST['pw1'] == $_POST['pw2']) && $myrights>5) {
 				if (isset($CFG['GEN']['newpasswords'])) {
-					$newpw = password_hash($_POST['newpw1'], PASSWORD_DEFAULT);
+					$newpw = password_hash($_POST['pw1'], PASSWORD_DEFAULT);
 				} else {
-					$newpw =md5($_POST['newpw1']);
+					$newpw =md5($_POST['pw1']);
 				}
 				//DB $query = "UPDATE imas_users SET password='$md5pw' WHERE id='$userid'";
 				//DB mysql_query($query) or die("Query failed : " . mysql_error());
