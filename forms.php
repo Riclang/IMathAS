@@ -47,6 +47,18 @@ switch($_GET['action']) {
 		} else if (isset($CFG['GEN']['TOSpage'])) {
 			echo "<span class=form><label for=\"agree\">I have read and agree to the <a href=\"#\" onclick=\"GB_show('Terms of Use','".$CFG['GEN']['TOSpage']."',700,500);return false;\">Terms of Use</a></label></span><span class=formright><input type=checkbox name=agree id=agree></span><br class=form />\n";
 		}
+		$CFG['acct']['passwordFormat'] = array('/[a-z]/', '/[A-Z]/', '/\d/');
+		$CFG['acct']['passwordFormaterror'] = 'Use a lowercase letter, uppercase letter, and a digit';
+		$CFG['acct']['SIDformaterror'] = 'Your username should only contain letters, numbers, and _';
+		if (is_array($loginformat)) {
+			$loginformat = '['.implode(',', $loginformat).']';
+		}
+		if (isset($CFG['acct']['passwordFormat']) && is_array($CFG['acct']['passwordFormat'])) {
+			$CFG['acct']['passwordFormat'] = '['.implode(',', $CFG['acct']['passwordFormat']).']';
+		}
+		if (isset($CFG['acct']['emailFormat']) && is_array($CFG['acct']['emailFormat'])) {
+			$CFG['acct']['emailFormat'] = '['.implode(',', $CFG['acct']['emailFormat']).']';
+		}
 		echo '<script type="text/javascript">
 		$("#newuserform").validate({
 			rules: {
@@ -55,7 +67,13 @@ switch($_GET['action']) {
 					pattern: '.$loginformat.',
 					remote: imasroot+"/actions.php?action=checkusername"
 				},
-				pw1: { required: true, minlength: 6},
+				pw1: {
+					required: true,';
+					if (isset($CFG['acct']['passwordFormat'])) {
+						echo 'pattern: '.$CFG['acct']['passwordFormat'].',';
+					}
+		echo 'minlength: '.(isset($CFG['acct']['passwordMinlength'])?$CFG['acct']['passwordMinlength']:6).'
+				},
 				pw2: {
 					required: true,
 					equalTo: "#pw1"
@@ -63,16 +81,29 @@ switch($_GET['action']) {
 				firstname: { required: true},
 				lastname: {required: true},
 				email: {
-					required: true,
-					email: true
+					required: true,';
+					if (isset($CFG['acct']['emailFormat'])) {
+						echo 'pattern: '.$CFG['acct']['emailFormat'].',';
+					}
+		echo 'email: true
 				},
 				agree: { required: true}
 			},
 			messages: {
 				SID: {
-					remote: _("That username is already taken. Try another.")
+					remote: _("That username is already taken. Try another."),';
+				if (isset($CFG['acct']['SIDformaterror'])) {
+					echo 'pattern: "'.Sanitize::encodeStringForJavascript($CFG['acct']['SIDformaterror']).'",';
 				}
-			},
+echo '
+				},';
+				if (isset($CFG['acct']['passwordFormaterror'])) {
+					echo 'pw1: {pattern: "'.Sanitize::encodeStringForJavascript($CFG['acct']['passwordFormaterror']).'"},';
+				}
+				if (isset($CFG['acct']['emailFormaterror'])) {
+					echo 'email: {pattern: "'.Sanitize::encodeStringForJavascript($CFG['acct']['emailFormaterror']).'"},';
+				}
+echo '},
 			invalidHandler: function() {
 				setTimeout(function(){$("#newuserform").removeClass("submitted").removeClass("submitted2");}, 100)}
 		});

@@ -31,12 +31,21 @@ require_once("includes/sanitize.php");
 		}
 
 		// Sanitize form data
+		function checkFormatAgainstRegex($val, $regexs) {
+			if (!is_array($regexs)) {
+				$regexs = array($regexs);
+			}
+			$isok = true;
+			foreach ($regexs as $regex) {
+				$isok = $isok && preg_match($regex, $val);
+			}
+			return $isok;
+		}
 		$_POST['SID'] = Sanitize::stripHtmlTags(trim($_POST['SID']));
 		$_POST['email'] = Sanitize::emailAddress(trim($_POST['email']));
 		$_POST['firstname'] = Sanitize::stripHtmlTags(trim($_POST['firstname']));
 		$_POST['lastname'] = Sanitize::stripHtmlTags(trim($_POST['lastname']));
-
-		if ($loginformat!='' && !preg_match($loginformat,$_POST['SID'])) {
+		if ($loginformat != '' && !checkFormatAgainstRegex($_POST['SID'], $loginformat)) {
 			$error .= "<p>$loginprompt is invalid.</p>";
 		}
 		//DB $query = "SELECT id FROM imas_users WHERE SID='{$_POST['SID']}'";
@@ -47,9 +56,13 @@ require_once("includes/sanitize.php");
 		if ($stm->rowCount()>0) {
 			$error .= "<p>$loginprompt '" . Sanitize::encodeStringForDisplay($_POST['SID']) . "' is used. </p>";
 		}
-		//
-		if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/',$_POST['email'])) {
+		
+		if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/',$_POST['email']) ||
+			(isset($CFG['acct']['emailFormat']) && !checkFormatAgainstRegex($_POST['SID'], $CFG['acct']['emailFormat']))) {
 			$error .= "<p>Invalid email address.</p>";
+		}
+		if (isset($CFG['acct']['passwordFormat']) && !checkFormatAgainstRegex($_POST['pw1'], $CFG['acct']['passwordFormat'])) {
+			$error .= "<p>Invalid password format. </p>";
 		}
 		if ($_POST['pw1'] != $_POST['pw2']) {
 			$error .= "<p>Passwords don't match. </p>";
@@ -427,7 +440,7 @@ require_once("includes/sanitize.php");
 		}
 	} else if ($_GET['action']=="checkusername") {
 		require_once("init_without_validate.php");
-		
+
 		$stm = $DBH->prepare("SELECT id FROM imas_users WHERE SID=:SID");
 		$stm->execute(array(':SID'=>$_GET['SID']));
 		if ($stm->rowCount()>0) {
@@ -793,8 +806,8 @@ require_once("includes/sanitize.php");
 
 		require("includes/userprefs.php");
 		storeUserPrefs();
-		
-		
+
+
 		/* moved above
 		if (isset($_POST['settimezone'])) {
 			if (date_default_timezone_set($_POST['settimezone'])) {
@@ -824,7 +837,7 @@ require_once("includes/sanitize.php");
 			$stm = $DBH->prepare("UPDATE imas_users SET remoteaccess='' WHERE id = :uid");
 			$stm->execute(array(':uid'=>$userid));
 		}
-	} 
+	}
 	if ($isgb) {
 		echo '<html><body>Changes Recorded.  <input type="button" onclick="parent.GB_hide()" value="Done" /></body></html>';
 	} else {
