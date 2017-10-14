@@ -3,6 +3,8 @@
 //(c) 2006 David Lippman
 require("init_without_validate.php");
 require("includes/htmlutil.php");
+require_once("includes/newusercommon.php");
+
 if ($_GET['action']!="newuser" && $_GET['action']!="resetpw" && $_GET['action']!="lookupusername") {
 	require("init.php");
 } else {
@@ -48,7 +50,6 @@ switch($_GET['action']) {
 			echo "<span class=form><label for=\"agree\">I have read and agree to the <a href=\"#\" onclick=\"GB_show('Terms of Use','".$CFG['GEN']['TOSpage']."',700,500);return false;\">Terms of Use</a></label></span><span class=formright><input type=checkbox name=agree id=agree></span><br class=form />\n";
 		}
 
-		require_once("includes/newusercommon.php");
 		showNewUserValidation('newuserform', (isset($studentTOS) || isset($CFG['GEN']['TOSpage']))?array('agree'):array());
 
 		if (!$emailconfirmation) {
@@ -98,21 +99,11 @@ switch($_GET['action']) {
 		echo '<div id="headerforms" class="pagetitle"><h2>Change Your Password</h2></div>';
 		echo "<form id=\"pageform\" method=post action=\"actions.php?action=chgpwd$gb\">\n";
 		echo "<span class=form><label for=\"oldpw\">Enter old password:</label></span> <input class=form type=password id=oldpw name=oldpw size=40 /> <BR class=form>\n";
-		echo "<span class=form><label for=\"newpw1\">Enter new password:</label></span>  <input class=form type=password id=newpw1 name=newpw1 size=40> <BR class=form>\n";
-		echo "<span class=form><label for=\"newpw2\">Verify new password:</label></span>  <input class=form type=password id=newpw2 name=newpw2 size=40> <BR class=form>\n";
-		echo '<script type="text/javascript">
-		$("#pageform").validate({
-			rules: {
-				oldpw: { required: true},
-				newpw1: { required: true, minlength: 6},
-				newpw2: {
-					required: true,
-					equalTo: "#newpw1"
-				}
-			},
-			invalidHandler: function() {setTimeout(function(){$("#pageform").removeClass("submitted").removeClass("submitted2");}, 100)}}
-		);
-		</script>';
+		echo "<span class=form><label for=\"pw1\">Enter new password:</label></span>  <input class=form type=password id=pw1 name=pw1 size=40> <BR class=form>\n";
+		echo "<span class=form><label for=\"pw2\">Verify new password:</label></span>  <input class=form type=password id=pw2 name=pw2 size=40> <BR class=form>\n";
+
+		showNewUserValidation("pageform",array("oldpw"));
+
 		echo "<div class=submit><input type=submit value=Submit></div></form>\n";
 		break;
 	case "chguserinfo":
@@ -292,33 +283,8 @@ switch($_GET['action']) {
 			'pw1'=>'{depends: function(element) {return $("#dochgpw").is(":checked")}}',
 			'pw2'=>'{depends: function(element) {return $("#dochgpw").is(":checked")}}'
 		);
-		require_once("includes/newusercommon.php");
 		showNewUserValidation("pageform", array('oldpw'), $requiredrules);
-		/*echo '<script type="text/javascript">
-		$("#pageform").validate({
-			rules: {
-				oldpw: {
-					required: {depends: function(element) {return $("#dochgpw").is(":checked")}}
-				},
-				newpw1: {
-					required: {depends: function(element) {return $("#dochgpw").is(":checked")}},
-					minlength: 6
-				},
-				newpw2: {
-					required: {depends: function(element) {return $("#dochgpw").is(":checked")}},
-					equalTo: "#newpw1"
-				},
-				firstname: { required: true},
-				lastname: {required: true},
-				email: {
-					required: true,
-					email: true
-				},
-			},
-			invalidHandler: function() {setTimeout(function(){$("#pageform").removeClass("submitted").removeClass("submitted2");}, 100)}}
-		);
-		</script>';
-		*/
+
 		echo "<div class=submit><input type=submit value='Update Info'></div>\n";
 
 		//echo '<p><a href="forms.php?action=googlegadget">Get Google Gadget</a> to monitor your messages and forum posts</p>';
@@ -393,18 +359,37 @@ switch($_GET['action']) {
 		}
 		echo '<div id="headerforms" class="pagetitle"><h2>Reset Password</h2></div>';
 		echo "<form id=\"pageform\" method=post action=\"actions.php?action=resetpw$gb\">\n";
-		echo "<p>Enter your User Name below and click Submit.  An email will be sent to your email address on file.  A link in that email will ";
-		echo "reset your password.</p>";
-		echo "<p><label for=username>User Name</label>: <input type=text name=\"username\" id=username /></p>";
-		echo '<script type="text/javascript">
-		$("#pageform").validate({
-			rules: {
-				username: { required: true}
-			},
-			invalidHandler: function() {setTimeout(function(){$("#pageform").removeClass("submitted").removeClass("submitted2");}, 100)}}
-		);
-		</script>';
-		echo "<p><input type=submit value=\"Submit\" /></p></form>";
+		if (isset($_GET['code'])) {
+			$stm = $DBH->prepare("SELECT remoteaccess FROM imas_users WHERE id=:id");
+			$stm->execute(array(':id'=>$_GET['id']));
+			$row = $stm->fetch(PDO::FETCH_ASSOC);
+			if ($row !== false && $row['remoteaccess']!='' && $row['remoteaccess']===$_GET['code']) {
+				echo '<input type="hidden" name="code" value="'.Sanitize::encodeStringForDisplay($_GET['code']).'"/>';
+				echo '<input type="hidden" name="id" value="'.Sanitize::encodeStringForDisplay($_GET['id']).'"/>';
+				echo '<p>Please select a new password:</p>';
+				echo '<p>Enter new password:  <input type="password" size="25" id=pw1 name="pw1"/><br/>';
+				echo '<p>Verify new password:  <input type="password" size="25" id=pw2 name="pw2"/></p>';
+				echo "<p><input type=submit value=\"Submit\" /></p></form>";
+				showNewUserValidation("pageform");
+			} else {
+				echo '<p>Invalid reset code.  If you have requested a password reset multiple times, you need the link from ';
+				echo 'the most recent email.</p>';
+			}
+		} else {
+			echo "<p>Enter your User Name below and click Submit.  An email will be sent to your email address on file.  A link in that email will ";
+			echo "reset your password.</p>";
+			echo "<p><label for=username>User Name</label>: <input type=text name=\"username\" id=username /></p>";
+			echo '<script type="text/javascript">
+			$("#pageform").validate({
+				rules: {
+					username: { required: true}
+				},
+				invalidHandler: function() {setTimeout(function(){$("#pageform").removeClass("submitted").removeClass("submitted2");}, 100)}}
+			);
+			</script>';
+			echo "<p><input type=submit value=\"Submit\" /></p></form>";
+		}
+
 		break;
 	case "lookupusername":
 		if ($gb == '') {

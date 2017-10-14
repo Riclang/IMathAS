@@ -42,7 +42,7 @@ function showNewUserValidation($formname, $extrarequired=array(), $requiredrules
       email: {
         required: '.(isset($requiredrules['email'])?$requiredrules['email']:'true').',';
         if (isset($CFG['acct']['emailFormat'])) {
-          echo 'pattern: '.$CFG['acct']['emailFormat'].',';
+        //  echo 'pattern: '.$CFG['acct']['emailFormat'].',';
         }
         echo 'email: true
       }, ';
@@ -109,6 +109,14 @@ function checkNewUserValidation($extrarequired=array()) {
   }
   if (isset($CFG['acct']['passwordFormat']) && !checkFormatAgainstRegex($_POST['pw1'], $CFG['acct']['passwordFormat'])) {
     $errors[] = "Invalid password format.";
+  }
+  if (isset($CFG['acct']['passwordMinlength'])) {
+    $pwminlen = Sanitize::onlyInt($CFG['acct']['passwordMinlength']);
+  } else {
+    $pwminlen =  6;
+  }
+  if (strlen($_POST['pw1']) <$pwminlen ) {
+    $errors[] = "Password must be at least $pwminlen characters.";
   }
   if ($_POST['pw1'] != $_POST['pw2']) {
     $errors[] = "Passwords don't match.";
