@@ -562,7 +562,9 @@ switch($_GET['action']) {
 				function chgother(el) {
 					var id = el.id;
 					if (el.value != "other") {
-						$("#"+id+"other").val("");
+						$("#"+id+"otherwrap").hide();
+					} else {
+						$("#"+id+"otherwrap").show();
 					}
 				}
 			</script>';
@@ -601,13 +603,15 @@ switch($_GET['action']) {
 			echo '<span class=form>'._('Course level').'</span>';
 			echo '<span class=formright>';
 			writeHtmlSelect("browserlevel", array_keys($levels), array_values($levels), $browser['level'],null,null,'onchange="chgother(this)"');
-			echo '<br/>Other: <input type=text size=40 name=browserlvlother value="'.($browser['level']=='other'?Sanitize::encodeStringForDisplay($browser['levelother']):'').'"></span><br class=form>';
+			echo '<span id="browserlevelotherwrap" '.($browser['level']!='other'?'style="display:none"':'').'>';
+			echo '<br/>Other: <input type=text size=40 name=browserlevelother value="'.($browser['level']=='other'?Sanitize::encodeStringForDisplay($browser['levelother']):'').'"></span></span><br class=form>';
 
 			if (isset($CFG['browser']['books'])) {
 				echo '<span class=form>'._('Primary textbook').'</span>';
 				echo '<span class=formright>';
 				writeHtmlSelect("browserbook", array_keys($CFG['browser']['books']), array_values($CFG['browser']['books']), $browser['book'],null,null,'onchange="chgother(this)"');
-				echo '<br/>Other: <input type=text size=40 name=browserbookother value="'.($browser['level']=='other'?Sanitize::encodeStringForDisplay($browser['bookother']):'').'"></span><br class=form>';
+				echo '<span id="browserbookotherwrap" '.($browser['book']!='other'?'style="display:none"':'').'>';
+				echo '<br/>Other: <input type=text size=40 name=browserbookother value="'.($browser['book']=='other'?Sanitize::encodeStringForDisplay($browser['bookother']):'').'"></span></span><br class=form>';
 			}
 
 			if (isset($CFG['browser']['modalities'])) {
@@ -616,15 +620,13 @@ switch($_GET['action']) {
 				$modes = array('class'=>'Classroom instruction',
 					'hybrid'=>'Hybrid',
 					'online'=>'Fully online',
-					'lab'=>'Emportium');
+					'lab'=>'Emporium');
 			}
 			echo '<span class=form>'._('Course modality').'</span>';
 			echo '<span class=formright>';
 			writeHtmlSelect("browsermode", array_keys($modes), array_values($modes), $browser['mode']);
 			echo '</span><br class=form>';
 
-			//TODO:  Add "what's in it" checkboxes: assessments, video lists, textbook links
-			//
 			if (isset($CFG['browser']['contenttypes'])) {
 				$contenttypes = $CFG['browser']['contenttypes'];
 			} else {

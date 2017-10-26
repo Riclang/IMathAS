@@ -443,7 +443,17 @@ switch($_POST['action']) {
 			$jsondata['browser'] = array();
 			$jsondata['browser']['name'] = Sanitize::stripHtmlTags($_POST['browsername']);
 			$jsondata['browser']['level'] = $_POST['browserlevel'];
+			if ($_POST['browserlevel']=='other') {
+				$jsondata['browser']['levelother'] = $_POST['browserlevelother'];
+			} else {
+				$jsondata['browser']['levelother'] = '';
+			}
 			$jsondata['browser']['book'] = $_POST['browserbook'];
+			if ($_POST['browserbook']=='other') {
+				$jsondata['browser']['bookother'] = $_POST['browserbookother'];
+			} else {
+				$jsondata['browser']['bookother'] = '';
+			}
 			$jsondata['browser']['mode'] = $_POST['browsermode'];
 			$jsondata['browser']['descrip'] = Sanitize::incomingHtml($_POST['browserdescrip']);
 			if (isset($_POST['browsercontenttypes'])) {
