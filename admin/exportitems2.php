@@ -68,7 +68,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 	$checked = $_POST['checked'];
 	$output = array();
 	$output['sourceinstall'] = $installname;
-	
+
 	//get gbcats
 	$gbcats = array(); $gbmap = array(0=>0);
 	if (isset($_POST['exportgbsetup'])) {
@@ -82,7 +82,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$gbcnt++;
 		}
 		$output['gbcats'] = $gbcats;
-		
+
 		$stm = $DBH->prepare("SELECT ".$db_fields['gbscheme']." FROM imas_gbscheme WHERE courseid=:courseid");
 		$stm->execute(array(':courseid'=>$cid));
 		$row = $stm->fetch(PDO::FETCH_ASSOC);
@@ -102,10 +102,10 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 	$toexport = array();
 	$itembackmap = array();
 	$qcnt = 0;
-	
+
 	//build new itemorder only including checked items
 	exportcopysub($items,'0',$newitems);
-	
+
 	//save into line, and into output
 	$line['itemorder'] = $newitems;
 	$output['course'] = $line;
@@ -125,7 +125,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$itemtypebackref[$row['itemtype']][$row['typeid']] = $itembackmap[$row['id']];
 		}
 	}
-	
+
 	//get instr_files
 	$query = "SELECT iif.id,iif.description,iif.filename FROM imas_instr_files AS iif ";
 	$query .= "JOIN imas_inlinetext ON iif.itemid=imas_inlinetext.id WHERE imas_inlinetext.courseid=:cid";
@@ -135,7 +135,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 	while ($frow = $stm->fetch(PDO::FETCH_ASSOC)) {
 		$instr_file_data[$frow['id']] = array($frow['description'], getcoursefileurl($frow['filename'],true));
 	}
-	
+
 	//get inlinetexts
 	if (isset($itemtypebackref['InlineText'])) {
 		$toget = array_keys($itemtypebackref['InlineText']);
@@ -157,7 +157,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$output['items'][$output_item_id] = array('type'=>'InlineText', 'data'=>$line);
 		}
 	}
-	
+
 	//get linkedtexts
 	if (isset($itemtypebackref['LinkedText'])) {
 		$toget = array_keys($itemtypebackref['LinkedText']);
@@ -186,7 +186,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$output['items'][$output_item_id] = array('type'=>'LinkedText', 'data'=>$line, 'rehostfile'=>$rehostfile);
 		}
 	}
-	
+
 	//get forums
 	if (isset($itemtypebackref['Forum'])) {
 		$toget = array_keys($itemtypebackref['Forum']);
@@ -206,7 +206,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			}
 			$output['items'][$output_item_id] = array('type'=>'Forum', 'data'=>$line);
 		}
-		
+
 		//export "sticky" forum posts
 		if (isset($_POST['exportstickyposts'])) {
 			$output['stickyposts'] = array();
@@ -227,8 +227,8 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			}
 		}
 	}
-	
-	
+
+
 	//get wikis
 	if (isset($itemtypebackref['Wiki'])) {
 		$toget = array_keys($itemtypebackref['Wiki']);
@@ -240,9 +240,9 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$output_item_id = $itemtypebackref['Wiki'][$line['id']];
 			unset($line['id']);
 			$output['items'][$output_item_id] = array('type'=>'Wiki', 'data'=>$line);
-		}     
+		}
 	}
-	
+
 	//get imas_questions
 	if (isset($itemtypebackref['Assessment'])) {
 		$toget = array_keys($itemtypebackref['Assessment']);
@@ -271,8 +271,8 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 				unset($line['withdrawn']);
 			}
 			//unset category if outcome or aid
-			if ($line['category']!='' && (is_numeric($line['category']) || 0!=strncmp($line['category'],"AID-",4))) {
-				$line['category'] = '';	
+			if ($line['category']!='' && (is_numeric($line['category']) || 0==strncmp($line['category'],"AID-",4))) {
+				$line['category'] = '';
 			}
 			//remap questionsetid
 			if (isset($qsmap[$line['questionsetid']])) {
@@ -288,7 +288,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$qmap[$qid] = $qcnt;
 			$qcnt++;
 		}
-	
+
 		//get imas_assessments
 		$stm = $DBH->prepare("SELECT id,".$db_fields['assessment']." FROM imas_assessments WHERE id IN ($ph)");
 		$stm->execute($toget);
@@ -366,7 +366,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			}
 		}
 	}
-	
+
 	//get drills
 	if (isset($itemtypebackref['Drill'])) {
 		$toget = array_keys($itemtypebackref['Drill']);
@@ -398,7 +398,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$output['items'][$output_item_id] = array('type'=>'Drill', 'data'=>$line);
 		}
 	}
-	
+
 	//now, get questions
 	if (count($qsmap)>0) {
 		//resolve any replaceby's
@@ -413,7 +413,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 		}
 		$toget = array_keys($qsmap);
 		$ph = Sanitize::generateQueryPlaceholders($toget);
-		
+
 		//look up any include___from's
 		$query = "SELECT id,control,qtext FROM imas_questionset WHERE id IN ($ph)";
 		$query .= " AND (control LIKE '%includecodefrom%' OR qtext LIKE '%includeqtextfrom%')";
@@ -437,7 +437,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$qsmap[$v] = $qscnt;
 			$qscnt++;
 		}
-		
+
 		$toget = array_keys($qsmap);
 		$ph = Sanitize::generateQueryPlaceholders($toget);
 		//get qimages
@@ -453,7 +453,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$line['filename'] = getqimageurl($line['filename'],true);
 			$qimgmap[$qsid][] = $line;
 		}
-		
+
 		//now, get questions themselves
 		$stm = $DBH->prepare("SELECT id,".$db_fields['questionset']." FROM imas_questionset WHERE id IN ($ph)");
 		$stm->execute($toget);
@@ -472,7 +472,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 				$line['dependencies'] = $dependencies[$line['id']];
 			}
 			unset($line['id']);
-			
+
 			//rewrite includecodefrom
 			$line['control'] = preg_replace_callback('/includecodefrom\((\d+)\)/', function($matches) use ($qsmap) {
 				  return "includecodefrom(EID".$qsmap[$matches[1]].")";
@@ -480,11 +480,11 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			$line['qtext'] = preg_replace_callback('/includeqtextfrom\((\d+)\)/', function($matches) use ($qsmap) {
 				  return "includeqtextfrom(EID".$qsmap[$matches[1]].")";
 				}, $line['qtext']);
-			
+
 			$output['questionset'][$output_qid] = $line;
 		}
 	}
-	
+
 	if (isset($_POST['exportoffline'])) {
 		$output['offline'] = array();
 		$stm = $DBH->prepare("SELECT ".$db_fields['offline']." FROM imas_gbitems WHERE courseid=:courseid");
@@ -493,7 +493,7 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 			//map gbcat
 			$line['gbcategory'] = $gbmap[$line['gbcategory']];
 			$output['offline'][] = $line;
-		}	
+		}
 	}
 	if (isset($_POST['exportcalitems'])) {
 		$output['calitems'] = array();
@@ -501,13 +501,13 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 		$stm->execute(array(':courseid'=>$cid));
 		while ($line = $stm->fetch(PDO::FETCH_ASSOC)) {
 			$output['calitems'][] = $line;
-		}	
+		}
 	}
-	
+
 	//dump it!
 	echo json_encode($output, JSON_FORCE_OBJECT);
 	exit;
-	
+
 } else { //STEP 1 DATA PROCESSING, INITIAL LOAD
 	//DB $query = "SELECT itemorder FROM imas_courses WHERE id='$cid'";
 	//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
@@ -568,7 +568,7 @@ if ($overwriteBody==1) {
 ?>
 		</tbody>
 		</table>
-		
+
 	<fieldset><legend>Options</legend>
 	<table>
 	<tbody>
@@ -581,7 +581,7 @@ if ($overwriteBody==1) {
 	</tbody>
 	</table>
 	</fieldset>
-	
+
 		<p><input type=submit name="export" value="Export Items"></p>
 	</form>
 

@@ -85,16 +85,16 @@ function relocatefileifneeded($file, $key, $sec="public") {
 }
 
 //copies file at URL
-function rehostfile($url, $keydir, $sec="public") {
+function rehostfile($url, $keydir, $sec="public", $prependToFilename="") {
 	if (substr($url,0,4)!=='http') {return false;}
-	
+
 	$tmpdir = __dir__.'/../admin/import/tmp';
 	if (!is_dir($tmpdir)) {
 		mkdir($tmpdir);
 	}
 	//TODO: $url = Sanitize::url($url);
 	$parseurl = parse_url($url);
-	$fn =  Sanitize::sanitizeFilenameAndCheckBlacklist(basename($parseurl['path']));
+	$fn =  Sanitize::sanitizeFilenameAndCheckBlacklist($prependToFilename.basename($parseurl['path']));
 	if ($GLOBALS['filehandertype'] == 's3') {
 		copy($url, $tmpdir.'/'.$fn);
 		if ($sec=="public" || $sec=="public-read") {
@@ -111,12 +111,20 @@ function rehostfile($url, $keydir, $sec="public") {
 			return false;
 		}
 	} else {
-		$base = rtrim(dirname(dirname(__FILE__)), '/\\').'/filestore/';
-		$dir = $base.$keydir;
-		$fn = basename($key);
+		if (substr($keydir,0,7)=='cfiles/') {
+			$base = rtrim(dirname(dirname(__FILE__)), '/\\').'/course/files/';
+			$dir = $base.Sanitize::onlyInt(substr($keydir,7));
+		} else if ($keydir=='qimages') {
+			$dir = rtrim(dirname(dirname(__FILE__)), '/\\').'/assessment/qimages';
+		} else {
+			$base = rtrim(dirname(dirname(__FILE__)), '/\\').'/filestore/';
+			$dir = $base.$keydir;
+		}
+
 		if (!is_dir($dir)) {
 			mkdir_recursive($dir);
 		}
+		echo "copying $url to $dir/$fn<br/>";
 		copy($url, $dir.'/'.$fn);
 		return $fn;
 	}

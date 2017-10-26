@@ -45,6 +45,8 @@ private $typemap = array();
 private $toimportbytype = array();
 private $importowner = 0;
 private $now = 0;
+private $qmodcnt = 0;
+private $qsadded = 0;
 
 //do the data import
 //$data:  parsed JSON array
@@ -62,12 +64,12 @@ private $now = 0;
 //	importcalitems: import calendar items
 public function importdata($data, $cid, $checked, $options) {
 	global $userid, $db_fields, $CFG, $DBH, $myrights;
-	
+
 	$this->data = $data;
 	$this->cid = $cid;
 	$this->checked = $checked;
 	$this->options = $options;
-	
+
 	//clear out class variables
 	$this->itemmap = array();
 	$this->itemstoimport = array();
@@ -77,43 +79,43 @@ public function importdata($data, $cid, $checked, $options) {
 	$this->typemap = array();
 	$this->toimportbytype = array();
 	$this->now = time();
-	
+
 	$DBH->beginTransaction();
-	
+
 	if (!empty($this->options['ownerid'])) {
 		$this->importowner = $this->options['ownerid'];
 	} else {
 		$this->importowner = $userid;
 	}
 	if (!isset($this->options['userights'])) {
-		$this->options['userights'] = -1;	
+		$this->options['userights'] = -1;
 	}
 	if (!isset($this->options['importlib'])) {
 		$this->options['importlib'] = 0;
 	}
-	
+
 	$stm = $DBH->prepare("SELECT itemorder,blockcnt FROM imas_courses WHERE id=?");
 	$stm->execute(array($this->cid));
 	list($itemorder,$this->blockcnt) = $stm->fetch(PDO::FETCH_NUM);
 	$courseitems = unserialize($itemorder);
-	
+
 	//set course options
 	if (!empty($this->options['importcourseopt'])) {
 		$this->importCourseOpt();
 	}
-	
+
 	//import gbscheme and gbcats if importgbsetup is set
 	//  we'll overwrite gbscheme, and delete any existing gbcats
 	if (!empty($this->options['importgbsetup'])) {
 		$this->importGBsetup();
 	}
-	
+
 	//figure out which items to import; establishes $this->itemstoimport
 	$this->extractItemsToImport($this->data['course']['itemorder']);
-	
+
 	//import questionset (question code)
 	$this->importQuestionSet();
-	
+
 	//group items to export by type
 	foreach ($this->itemstoimport as $itemtoimport) {
 		if (!isset($this->toimportbytype[$this->data['items'][$itemtoimport]['type']])) {
@@ -121,38 +123,38 @@ public function importdata($data, $cid, $checked, $options) {
 		}
 		$this->toimportbytype[$this->data['items'][$itemtoimport]['type']][] = $itemtoimport;
 	}
-	
+
 	//insert the inlinetext items
 	if (isset($this->toimportbytype['InlineText'])) {
 		$this->insertInline();
 	}
-	
+
 	//insert the linkedtext items
 	if (isset($this->toimportbytype['LinkedText'])) {
 		$this->insertLinked();
 	}
-	
+
 	//insert the Forum items
 	if (isset($this->toimportbytype['Forum'])) {
 		$this->insertForum();
 	}
-	
+
 	//insert the wiki items
 	if (isset($this->toimportbytype['Wiki'])) {
 		$this->insertWiki();
 	}
 
-	
+
 	//insert the Drill items
 	if (isset($this->toimportbytype['Drill'])) {
 		$this->insertDrill();
 	}
-	
+
 	//insert the Assessment items
 	if (isset($this->toimportbytype['Assessment'])) {
 		$this->insertAssessment();
 	}
-	
+
 	//add imas_items
 	$exarr = array();
 	foreach ($this->itemstoimport as $item) {
@@ -178,31 +180,31 @@ public function importdata($data, $cid, $checked, $options) {
 	//add checked items from $this->data itemorder into courseitems and update blockcnt
 	$db_fields['block'] = explode(',', $db_fields['block']);
 	$this->copysub($this->data['course']['itemorder'], '0', $courseitems);
-	
+
 	//record new itemorder
 	$stm = $DBH->prepare("UPDATE imas_courses SET itemorder=?,blockcnt=? WHERE id=?");
 	$stm->execute(array(serialize($courseitems), $this->blockcnt, $this->cid));
-	
+
 	//import sticky posts, if present
 	if (!empty($this->options['importstickyposts']) && isset($this->data['stickyposts']) && count($this->data['stickyposts'])>0) {
 		$this->addStickyPosts();
 	}
-	
+
 	//import offline, if present
 	if (!empty($this->options['importoffline']) && isset($this->data['offline']) && count($this->data['offline'])>0) {
 		$this->addOffline();
 	}
-	
+
 	//import calendar items, if present
 	if (!empty($this->options['importcalitems']) && isset($this->data['calitems']) && count($this->data['calitems'])>0) {
 		$this->addCalitems();
 	}
-	
+
 	$DBH->commit();
-	
+
 	return array(
-		'Questions Added'=>count($qstoadd),
-		'Questions Updated'=>$qmodcnt,
+		'Questions Added'=>$this->qsadded,
+		'Questions Updated'=>$this->qmodcnt,
 		'InlineText Imported'=>count($this->typemap['InlineText']),
 		'Linked Imported'=>count($this->typemap['LinkedText']),
 		'Forums Imported'=>count($this->typemap['Forum']),
@@ -229,7 +231,7 @@ private function getAssessQids($arr) {
 	$qs = array();
 	foreach ($arr as $v) {
 		if (is_array($v)) {
-			for ($i=(strpos($subs[0],'|')!==false)?1:0;$i<count($v);$i++) {
+			for ($i=(strpos($v[0],'|')!==false)?1:0;$i<count($v);$i++) {
 				$qs[] = $v[$i];
 			}
 		} else {
@@ -276,7 +278,7 @@ private function getMappedOwnerid($listedowner) {
 
 private function importCourseOpt() {
 	global $DBH, $db_fields, $CFG;
-	
+
 	$db_fields['course'] = explode(',', $db_fields['course']);
 	$sets = array();
 	$exarr = array();
@@ -297,11 +299,11 @@ private function importCourseOpt() {
 
 private function importGBsetup() {
 	global $DBH, $db_fields;
-	
+
 	//clear any existing gbcats
 	$stm = $DBH->prepare("DELETE FROM imas_gbcats WHERE courseid=?");
 	$stm->execute(array($this->cid));
-	
+
 	if (count($this->data['gbcats'])>0) {
 		//unset any fields we don't have
 		$db_fields['gbcats'] = explode(',', $db_fields['gbcats']);
@@ -323,7 +325,7 @@ private function importGBsetup() {
 			$this->gbmap[$i] = $firstgbcat+($i-1);
 		}
 	}
-	
+
 	//replace gbscheme
 	$db_fields['gbscheme'] = explode(',', $db_fields['gbscheme']);
 	$sets = array();
@@ -342,8 +344,8 @@ private function importGBsetup() {
 }
 
 private function importQuestionSet() {
-	global $DBH, $db_fields;
-	
+	global $DBH, $db_fields, $myrights;
+
 	if (!isset($this->data['questionset']) || count($this->data['questionset'])==0) {
 		return;
 	}
@@ -363,7 +365,7 @@ private function importQuestionSet() {
 			$qstoimport = array_merge($qstoimport, $this->data['items'][$item]['data']['itemids']);
 		}
 	}
-	if (count($qstoimport)==0) { 
+	if (count($qstoimport)==0) {
 		return;
 	}
 	$qstoimport = array_unique($qstoimport);
@@ -371,7 +373,7 @@ private function importQuestionSet() {
 	foreach ($qstoimport as $qsid) {
 		$qsuidmap[$this->data['questionset'][$qsid]['uniqueid']] = $qsid;
 	}
-	
+
 	//prep DB fields
 	$db_fields['questionset'] = explode(',', $db_fields['questionset']);
 	//only keep values in db_fields that are also keys of first questionset
@@ -380,22 +382,21 @@ private function importQuestionSet() {
 	}
 	$questionset_sets = implode('=?,', $db_fields['questionset']).'=?';
 	$update_qset_stm = $DBH->prepare("UPDATE imas_questionset SET $questionset_sets WHERE id=?");
-	
+
 	//now pull existing questions to setup qsmap. Update as appropriate
 	$ph = Sanitize::generateQueryPlaceholders($qsuidmap);
 	$stm = $DBH->prepare("SELECT id,uniqueid,lastmoddate,deleted,ownerid,userights FROM imas_questionset WHERE uniqueid IN ($ph)");
 	$stm->execute(array_keys($qsuidmap));
 	$toresolve = array();
 	$qimgs = array();
-	$qmodcnt = 0;
+
 	while ($row = $stm->fetch(PDO::FETCH_ASSOC)) {
 		//set up map of export id => local id
 		$exportqid = $qsuidmap[$row['uniqueid']];
 		$this->qsmap[$exportqid] = $row['id'];
 		$exportlastmod = $this->data['questionset'][$exportqid]['lastmoddate'];
-		if ($row['deleted']==1 || ($this->options['update']==2 && $myrights==100) || 
+		if ($row['deleted']==1 || ($this->options['update']==2 && $myrights==100) ||
 			($this->options['update']==1 && $exportlastmod>$row['lastmoddate'] && ($row['ownerid']==$this->importowner || $row['userights']>3 || $myrights==100))) {
-			
 			//update question
 			$exarr = array();
 			if ($row['deleted']==0) {
@@ -409,7 +410,7 @@ private function importQuestionSet() {
 			}
 			$exarr[] = $row['id'];
 			$update_qset_stm->execute($exarr);
-			$qmodcnt++;
+			$this->qmodcnt++;
 			if (isset($this->data['questionset'][$exportqid]['dependencies'])) {
 				$toresolve[] = $exportqid;
 			}
@@ -418,9 +419,10 @@ private function importQuestionSet() {
 			}
 		}
 	}
-	
+
 	//figure out which questions we need to add and add them
 	$qstoadd = array_diff($qstoimport, array_keys($this->qsmap));
+	$this->qsadded = count($qstoadd);
 	$exarr = array();
 	$tomap = array();
 	foreach ($qstoadd as $exportqid) {
@@ -461,15 +463,15 @@ private function importQuestionSet() {
 			$this->qsmap[$tomapeqid] = $firstqsid+$k;
 		}
 	}
-	
+
 	//add question images
 	$todelqimg = array();
 	$exarr = array();
-	foreach ($qimgs as $eqsid->$qimgarr) {
+	foreach ($qimgs as $eqsid=>$qimgarr) {
 		$todelqimg[] = $this->qsmap[$eqsid];
 		foreach ($qimgarr as $v) {
 			//rehost image.  prepend with question ID to prevent conflicts
-			$newfn = rehostfile($v['filename'], 'qimages', $this->qsmap[$eqsid].'-');
+			$newfn = rehostfile($v['filename'], 'qimages', 'public', $this->qsmap[$eqsid].'-');
 			if ($newfn!==false) {
 				$exarr[] = $this->qsmap[$eqsid];
 				$exarr[] = $v['var'];
@@ -488,7 +490,7 @@ private function importQuestionSet() {
 		$stm = $DBH->prepare("INSERT INTO imas_qimages (qsetid,var,filename,alttext) VALUES $ph");
 		$stm->execute($exarr);
 	}
-	
+
 	//add library items for inserted questions
 	$exarr = array();
 	foreach ($qstoadd as $exportqid) {
@@ -503,15 +505,15 @@ private function importQuestionSet() {
 		$stm = $DBH->prepare("INSERT INTO imas_library_items (libid,qsetid,ownerid,lastmoddate) VALUES $ph");
 		$stm->execute($exarr);
 	}
-	
+
 	//resolve include___from dependencies by updating
 	$upd_qset_include = $DBH->prepare("UPDATE imas_questionset SET control=?,qtext=? WHERE id=?");
 	foreach ($toresolve as $exportqid) {
-		$this->data['questionset'][$exportqid]['control'] = preg_replace_callback('/includecodefrom\(EID(\d+)\)/', 
+		$this->data['questionset'][$exportqid]['control'] = preg_replace_callback('/includecodefrom\(EID(\d+)\)/',
 			function($matches) {
 				  return "includecodefrom(".$this->qsmap[$matches[1]].")";
 			}, $this->data['questionset'][$exportqid]['control']);
-		$this->data['questionset'][$exportqid]['qtext'] = preg_replace_callback('/includeqtextfrom\(EID(\d+)\)/', 
+		$this->data['questionset'][$exportqid]['qtext'] = preg_replace_callback('/includeqtextfrom\(EID(\d+)\)/',
 			function($matches) {
 				  return "includeqtextfrom(".$this->qsmap[$matches[1]].")";
 			}, $this->data['questionset'][$exportqid]['qtext']);
@@ -521,7 +523,7 @@ private function importQuestionSet() {
 
 private function insertInline() {
 	global $DBH, $db_fields;
-	
+
 	$this->typemap['InlineText'] = array();
 	$exarr = array();
 	$toresolve = array();
@@ -548,7 +550,7 @@ private function insertInline() {
 	foreach ($this->toimportbytype['InlineText'] as $toimport) {
 		$this->typemap['InlineText'][$toimport] = $firstinsid+$k;
 	}
-	
+
 	//resolve any fileorders
 	$exarr = array();
 	foreach ($toresolve as $tohandle) {
@@ -557,7 +559,7 @@ private function insertInline() {
 			$newfn = rehostfile($filearr[1], 'cfiles/'.$this->cid);
 			if ($newfn!==false) {
 				$exarr[] = $filearr[0]; //description
-				$exarr[] = $this->cid.'/'.$newfn; //filename 
+				$exarr[] = $this->cid.'/'.$newfn; //filename
 				$exarr[] = $this->typemap['InlineText'][$tohandle];
 			}
 		}
@@ -582,7 +584,7 @@ private function insertInline() {
 
 private function insertLinked() {
 	global $DBH, $db_fields;
-	
+
 	$this->typemap['LinkedText'] = array();
 	$exarr = array();
 	$db_fields['linkedtext'] = array_values(array_intersect(explode(',', $db_fields['linkedtext']), array_keys($this->data['items'][$this->toimportbytype['LinkedText'][0]]['data'])));
@@ -591,7 +593,7 @@ private function insertLinked() {
 			//rehost file and change weblink to file:
 			$newfn = rehostfile($this->data['items'][$toimport]['data']['text'], 'cfiles/'.$this->cid);
 			if ($newfn!==false) {
-				$this->data['items'][$toimport]['data']['text'] = 'file:'.$this->cid.'/'.$newfn;	
+				$this->data['items'][$toimport]['data']['text'] = 'file:'.$this->cid.'/'.$newfn;
 			}else {
 				echo "fail on rehost";
 				exit;
@@ -628,7 +630,7 @@ private function insertLinked() {
 
 private function insertForum() {
 	global $DBH, $db_fields;
-	
+
 	$this->typemap['Forum'] = array();
 	$exarr = array();
 	$db_fields['forum'] = array_values(array_intersect(explode(',', $db_fields['forum']), array_keys($this->data['items'][$this->toimportbytype['Forum'][0]]['data'])));
@@ -658,7 +660,7 @@ private function insertForum() {
 
 private function insertWiki() {
 	global $DBH, $db_fields;
-	
+
 	$this->typemap['Wiki'] = array();
 	$exarr = array();
 	$db_fields['Wiki'] = array_values(array_intersect(explode(',', $db_fields['wiki']), array_keys($this->data['items'][$this->toimportbytype['Wiki'][0]]['data'])));
@@ -683,7 +685,7 @@ private function insertWiki() {
 
 private function insertDrill() {
 	global $DBH, $db_fields;
-	
+
 	$this->typemap['Drill'] = array();
 	$exarr = array();
 	$db_fields['drill'] = array_values(array_intersect(explode(',', $db_fields['drill']), array_keys($this->data['items'][$this->toimportbytype['Drill'][0]]['data'])));
@@ -714,11 +716,11 @@ private function insertDrill() {
 
 private function insertAssessment() {
 	global $DBH, $db_fields;
-	
+
 	$this->typemap['Assessment'] = array();
 	$exarr = array();
 	$db_fields['assessment'] = array_values(array_intersect(explode(',', $db_fields['assessment']), array_keys($this->data['items'][$this->toimportbytype['Assessment'][0]]['data'])));
-	$contentlen = 0; 
+	$contentlen = 0;
 	$tomap = array();
 	foreach ($this->toimportbytype['Assessment'] as $toimport) {
 		$tomap[] = $toimport;
@@ -739,31 +741,31 @@ private function insertAssessment() {
 		}
 		//sanitize html fields
 		foreach ($db_fields['html']['assessment'] as $field) {
-			$this->data['items'][$toimport]['data'][$field] = myhtmlawed($this->data['items'][$toimport]['data'][$field]);
+			$thisitemdata[$field] = myhtmlawed($thisitemdata[$field]);
 		}
 		//sanitize intro field, which may be json
-		$introjson = json_decode($this->data['items'][$toimport]['data']['intro'], true);
+		$introjson = json_decode($thisitemdata['intro'], true);
 		if ($introjson===false) {
 			//regular intro
-			$this->data['items'][$toimport]['data']['intro'] = myhtmlawed($this->data['items'][$toimport]['data']['intro']);
+			$thisitemdata['intro'] = myhtmlawed($thisitemdata['intro']);
 		} else {
 			$introjson[0] = myhtmlawed($introjson[0]);
 			for ($i=1;$i<count($introjson);$i++) {
 				$introjson[$i]['text'] = myhtmlawed($introjson[$i]['text']);
 			}
-			$this->data['items'][$toimport]['data']['intro'] = json_encode($introjson);
+			$thisitemdata['intro'] = json_encode($introjson);
 		}
 		//Sanitize endmsg
-		if (is_array($this->data['items'][$toimport]['data']['endmsg'])) {
-			$endmsgdata = $this->data['items'][$toimport]['data']['endmsg'];
+		if (is_array($thisitemdata['endmsg'])) {
+			$endmsgdata = $thisitemdata['endmsg'];
 			$endmsgdata['commonmsg'] = myhtmLawed($endmsgdata['commonmsg']);
 			$endmsgdata['def'] = myhtmLawed($endmsgdata['def']);
 			foreach (array_keys($endmsgdata['msgs']) as $k) {
 				$endmsgdata['msgs'][$k] = myhtmLawed($endmsgdata['msgs'][$k]);
 			}
-			$this->data['items'][$toimport]['data']['endmsg'] = serialize($endmsgdata);
+			$thisitemdata['endmsg'] = serialize($endmsgdata);
 		} else {
-			$this->data['items'][$toimport]['data']['endmsg'] = '';
+			$thisitemdata['endmsg'] = '';
 		}
 		//we'll resolve these later
 		$thisitemdata['reqscoreaid'] = 0;
@@ -794,7 +796,7 @@ private function insertAssessment() {
 			$this->typemap['Assessment'][$tomapid] = $firstaid+$k;
 		}
 	}
-	
+
 	//now, insert questions
 	$db_fields['questions'] = explode(',', $db_fields['questions']);
 	//only keep values in db_fields that are also keys of first question
@@ -826,7 +828,7 @@ private function insertAssessment() {
 			}
 		}
 	}
-	
+
 	//resolve itemorder and reqscoreaid
 	$a_upd_stm = $DBH->prepare("UPDATE imas_assessments SET reqscoreaid=?,itemorder=? WHERE id=?");
 	foreach ($this->toimportbytype['Assessment'] as $toimport) {
@@ -856,7 +858,7 @@ private function insertAssessment() {
 
 private function addStickyPosts() {
 	global $DBH, $db_fields;
-	
+
 	$db_fields['forum_posts'] = explode(',', $db_fields['forum_posts']);
 	//only keep values in db_fields that are also keys of first question
 	$db_fields['forum_posts'] = array_values(array_intersect($db_fields['forum_posts'], array_keys($this->data['stickyposts'][0])));
@@ -875,7 +877,7 @@ private function addStickyPosts() {
 				$newfn = rehostfile($toimport['files'][2*$i+1], 'ffiles/'.$this->typemap['Forum'][$toimport['forumid']]);
 				if ($newfn!==false) {
 					$newfiles[2*$i] = $toimport['files'][2*$i];
-					$newfiles[2*$i+1] = $newfn; 
+					$newfiles[2*$i+1] = $newfn;
 				}
 			}
 			$toimport['files'] = implode('@@', $newfiles);
@@ -893,7 +895,7 @@ private function addStickyPosts() {
 	$stm = $DBH->prepare("INSERT INTO imas_forum_posts (userid,postdate,".implode(',',$db_fields['forum_posts']).") VALUES $ph");
 	$stm->execute($exarr);
 	$firstinsid = $DBH->lastInsertId();
-	
+
 	//now insert corresponding imas_forum_threads entries
 	$exarr = array();
 	foreach ($this->data['stickyposts'] as $k=>$toimport) {
@@ -902,6 +904,9 @@ private function addStickyPosts() {
 	$ph = Sanitize::generateQueryPlaceholdersGrouped($exarr, 4);
 	$stm = $DBH->prepare("INSERT INTO imas_forum_threads (id,forumid,lastposttime,lastpostuser) VALUES $ph");
 	$stm->execute($exarr);
+
+	//resolve threadid in imas_forum_posts in a lazy global way
+	$stm = $DBH->query("UPDATE imas_forum_posts SET threadid=id WHERE threadid=0 AND parent=0");
 }
 
 private function addOffline() {
