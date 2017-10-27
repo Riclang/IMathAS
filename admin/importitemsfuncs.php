@@ -94,10 +94,14 @@ public function importdata($data, $cid, $checked, $options) {
 		$this->options['importlib'] = 0;
 	}
 
-	$stm = $DBH->prepare("SELECT itemorder,blockcnt FROM imas_courses WHERE id=?");
+	$stm = $DBH->prepare("SELECT itemorder,blockcnt,ownerid FROM imas_courses WHERE id=?");
 	$stm->execute(array($this->cid));
-	list($itemorder,$this->blockcnt) = $stm->fetch(PDO::FETCH_NUM);
+	list($itemorder, $this->blockcnt, $courseowner) = $stm->fetch(PDO::FETCH_NUM);
 	$courseitems = unserialize($itemorder);
+
+	if (!empty($this->options['usecourseowner'])) {
+		$this->importowner = $courseowner;
+	}
 
 	//set course options
 	if (!empty($this->options['importcourseopt'])) {
@@ -396,7 +400,7 @@ private function importQuestionSet() {
 		$this->qsmap[$exportqid] = $row['id'];
 		$exportlastmod = $this->data['questionset'][$exportqid]['lastmoddate'];
 		if ($row['deleted']==1 || ($this->options['update']==2 && $myrights==100) ||
-			($this->options['update']==1 && $exportlastmod>$row['lastmoddate'] && ($row['ownerid']==$this->importowner || $row['userights']>3 || $myrights==100))) {
+			($this->options['update']==1 && $exportlastmod>$row['lastmoddate'] && ($row['ownerid']==$this->importowner || $row['userights']>3))) {
 			//update question
 			$exarr = array();
 			if ($row['deleted']==0) {
@@ -547,7 +551,7 @@ private function insertInline() {
 	$stm = $DBH->prepare("INSERT INTO imas_inlinetext (courseid,".implode(',',$db_fields['inlinetext']).") VALUES $ph");
 	$stm->execute($exarr);
 	$firstinsid = $DBH->lastInsertId();
-	foreach ($this->toimportbytype['InlineText'] as $toimport) {
+	foreach ($this->toimportbytype['InlineText'] as $k=>$toimport) {
 		$this->typemap['InlineText'][$toimport] = $firstinsid+$k;
 	}
 
@@ -623,7 +627,7 @@ private function insertLinked() {
 	$stm = $DBH->prepare("INSERT INTO imas_linkedtext (courseid,".implode(',',$db_fields['linkedtext']).") VALUES $ph");
 	$stm->execute($exarr);
 	$firstinsid = $DBH->lastInsertId();
-	foreach ($this->toimportbytype['LinkedText'] as $toimport) {
+	foreach ($this->toimportbytype['LinkedText'] as $k=>$toimport) {
 		$this->typemap['LinkedText'][$toimport] = $firstinsid+$k;
 	}
 }
@@ -678,7 +682,7 @@ private function insertWiki() {
 	$stm = $DBH->prepare("INSERT INTO imas_wikis (courseid,".implode(',',$db_fields['wiki']).") VALUES $ph");
 	$stm->execute($exarr);
 	$firstinsid = $DBH->lastInsertId();
-	foreach ($this->toimportbytype['Wiki'] as $toimport) {
+	foreach ($this->toimportbytype['Wiki'] as $k=>$toimport) {
 		$this->typemap['Wiki'][$toimport] = $firstinsid+$k;
 	}
 }
@@ -709,7 +713,7 @@ private function insertDrill() {
 	$stm = $DBH->prepare("INSERT INTO imas_drillassess (courseid,".implode(',',$db_fields['drill']).") VALUES $ph");
 	$stm->execute($exarr);
 	$firstinsid = $DBH->lastInsertId();
-	foreach ($this->toimportbytype['Drill'] as $toimport) {
+	foreach ($this->toimportbytype['Drill'] as $k=>$toimport) {
 		$this->typemap['Drill'][$toimport] = $firstinsid+$k;
 	}
 }
@@ -864,6 +868,10 @@ private function addStickyPosts() {
 	$db_fields['forum_posts'] = array_values(array_intersect($db_fields['forum_posts'], array_keys($this->data['stickyposts'][0])));
 	$exarr = array();
 	foreach ($this->data['stickyposts'] as $toimport) {
+		//skip if didn't import forum
+		if (!isset($this->typemap['Forum'][$toimport['forumid']])) {
+			continue;
+		}
 		//remap forumid
 		$toimport['forumid'] = $this->typemap['Forum'][$toimport['forumid']];
 		//sanitize html fields
@@ -890,6 +898,9 @@ private function addStickyPosts() {
 		foreach ($db_fields['forum_posts'] as $field) {
 			$exarr[] = $toimport[$field];
 		}
+	}
+	if (count($exarr)==0) {
+		return;
 	}
 	$ph = Sanitize::generateQueryPlaceholdersGrouped($exarr, count($db_fields['forum_posts'])+2);
 	$stm = $DBH->prepare("INSERT INTO imas_forum_posts (userid,postdate,".implode(',',$db_fields['forum_posts']).") VALUES $ph");

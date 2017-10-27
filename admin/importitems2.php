@@ -37,11 +37,11 @@ if (!(isset($teacherid))) {
 	$body = "You need to access this page from a menu link";
 } else if (isset($_POST['process'])) {
 	//FORM HAS BEEN POSTED, STEP 3 DATA MANIPULATION - do import
-	
+
 	$uploaddir = __DIR__.'/import/';
 	$uploadfile = $uploaddir . Sanitize::sanitizeFilenameAndCheckBlacklist($_POST['filename']);
 	$data = json_decode(file_get_contents($uploadfile), true);
-	
+
 	$options = array();
 	foreach (array('courseopt','gbsetup','offline','calitems','stickyposts') as $n) {
 		if (isset($_POST['import'.$n])) {
@@ -59,18 +59,22 @@ if (!(isset($teacherid))) {
 		$libs = explode(',', $_POST['libs']);
 		$options['importlib'] = $libs[0];
 	}
+	if (isset($adminasteacher) && $adminasteacher && isset($_POST['importasteacher'])) {
+		$options['usecourseowner'] = true;
+	}
+
 
 	$importer = new ImportItemClass();
 	$res = $importer->importdata($data, $cid, $_POST['checked'], $options);
-	
+
 	$overwriteBody = 1;
 	$body = '<h2>Import Results</h2><p>';
 	foreach ($res as $k=>$v) {
 		$body .= Sanitize::encodeStringForDisplay($k.': '.$v).'<br/>';
 	}
 	$body .= '</p><p><a href="../course/course.php?cid='.$cid.'">Done</a><p>';
-	
-} elseif ($_FILES['userfile']['name']!='') { 
+
+} elseif ($_FILES['userfile']['name']!='') {
 	//STEP 2 DATA MANIPULATION - parse input file
 	$page_fileErrorMsg = "";
 	$uploaddir = __DIR__.'/import/';
@@ -144,7 +148,7 @@ echo '<form id="qform" enctype="multipart/form-data" method=post action="importi
 if ($_FILES['userfile']['name']=='' || strlen($page_fileErrorMsg)>1) {
 	if (strlen($page_fileErrorMsg)>1) {
 		echo '<p class="noticetext">'.$page_fileErrorMsg.'</p>';;
-	}	
+	}
 ?>
 	<p>This page will allow you to import course items previously exported from
 	this site or another site running this software.</p>
@@ -154,7 +158,7 @@ if ($_FILES['userfile']['name']=='' || strlen($page_fileErrorMsg)>1) {
 	<span class=formright><input name="userfile" type="file" /></span><br class=form>
 	<div class=submit><input type=submit value="Submit"></div>
 
-<?php	 
+<?php
 } else {
 	echo $page_fileHiddenInput;
 	echo '<h3>'._('Course').': '.$data['course']['name'].'</h3>';
@@ -177,8 +181,12 @@ if ($_FILES['userfile']['name']=='' || strlen($page_fileErrorMsg)>1) {
 			<option value="4">Allow use and modifications by all</option>
 		</select>
 		<br/><input type="checkbox" name="reuseqrights" checked /> Use rights in import, if available.
-		
 	</p>
+	<?php
+		if (isset($adminasteacher) && $adminasteacher) {
+			echo '<p><input type="checkbox" name="importasteacher" checked /> Import as course owner (for ownership when updating or adding questions).</p>';
+		}
+	?>
 	<p>
 
 	Assign Added Questions to library:

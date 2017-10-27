@@ -124,7 +124,6 @@ function rehostfile($url, $keydir, $sec="public", $prependToFilename="") {
 		if (!is_dir($dir)) {
 			mkdir_recursive($dir);
 		}
-		echo "copying $url to $dir/$fn<br/>";
 		copy($url, $dir.'/'.$fn);
 		return $fn;
 	}
@@ -796,7 +795,7 @@ function getqimageurl($key,$abs=false) {
 	global $urlmode,$imasroot;
 	$key = Sanitize::rawurlencodePath($key);
 	if ($GLOBALS['filehandertypecfiles'] == 's3') {
-		return $urlmode."s3.amazonaws.com/{$GLOBALS['AWSbucket']}/qimages/$key";
+		return 'https://'.$GLOBALS['AWSbucket'].".s3.amazonaws.com/qimages/$key";
 	} else {
 		if ($abs==true) {
 			return $urlmode.$_SERVER['HTTP_HOST']."$imasroot/assessment/qimages/$key";
