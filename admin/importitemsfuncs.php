@@ -47,6 +47,7 @@ private $importowner = 0;
 private $now = 0;
 private $qmodcnt = 0;
 private $qsadded = 0;
+private $isadmin = false;
 
 //do the data import
 //$data:  parsed JSON array
@@ -101,6 +102,9 @@ public function importdata($data, $cid, $checked, $options) {
 
 	if (!empty($this->options['usecourseowner'])) {
 		$this->importowner = $courseowner;
+	}
+	if ($myrights==100 && empty($this->options['usecourseowner'])) {
+		$this->isadmin = true;
 	}
 
 	//set course options
@@ -399,8 +403,8 @@ private function importQuestionSet() {
 		$exportqid = $qsuidmap[$row['uniqueid']];
 		$this->qsmap[$exportqid] = $row['id'];
 		$exportlastmod = $this->data['questionset'][$exportqid]['lastmoddate'];
-		if ($row['deleted']==1 || ($this->options['update']==2 && $myrights==100) ||
-			($this->options['update']==1 && $exportlastmod>$row['lastmoddate'] && ($row['ownerid']==$this->importowner || $row['userights']>3))) {
+		if ($row['deleted']==1 || ($this->options['update']==2 && $this->isadmin) ||
+			($this->options['update']==1 && $exportlastmod>$row['lastmoddate'] && ($row['ownerid']==$this->importowner || $row['userights']>3 || $this->isadmin))) {
 			//update question
 			$exarr = array();
 			if ($row['deleted']==0) {

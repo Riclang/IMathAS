@@ -48,6 +48,16 @@ if (!(isset($teacherid))) {
 			$options['import'.$n] = 1;
 		}
 	}
+	if ($_POST['merge']!=1 && $_POST['merge']!=-1) {
+		if ($myrights==100 && $_POST['merge']==2) {
+			if (isset($_POST['importasteacher'])) {
+				$_POST['merge'] = 1;
+			}
+		} else {
+			$_POST['merge'] = -1;
+		}
+
+	}
 	$options['update'] = $_POST['merge'];
 	$options['userights'] = $_POST['userights'];
 	if (isset($_POST['reuseqrights'])) {
@@ -183,7 +193,7 @@ if ($_FILES['userfile']['name']=='' || strlen($page_fileErrorMsg)>1) {
 		<br/><input type="checkbox" name="reuseqrights" checked /> Use rights in import, if available.
 	</p>
 	<?php
-		if (isset($adminasteacher) && $adminasteacher) {
+		if ($myrights==100) {
 			echo '<p><input type="checkbox" name="importasteacher" checked /> Import as course owner (for ownership when updating or adding questions).</p>';
 		}
 	?>
