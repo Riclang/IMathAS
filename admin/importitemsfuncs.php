@@ -366,7 +366,7 @@ private function importQuestionSet() {
 				$qsid = $this->data['questions'][$qid]['questionsetid'];
 				$qstoimport[] = $qsid;
 				if (isset($this->data['questionset'][$qsid]['dependencies'])) {
-					$qstoimport = array_merge($qstoimport, $this->data['questions'][$qsid]['dependencies']);
+					$qstoimport = array_merge($qstoimport, $this->data['questionset'][$qsid]['dependencies']);
 				}
 			}
 		} else if ($this->data['items'][$item]['type']=='Drill') {

@@ -356,12 +356,12 @@ if (!(isset($teacherid))) {   //NO PERMISSIONS
 		}
 		//remap reqscoreaid
 		foreach ($assessmap as $sourceid=>$outputid) {
-			if ($output['items'][$outputid]['reqscoreaid']>0) {
-				if (isset($assessmap[$output['items'][$outputid]['reqscoreaid']])) {
-					$output['items'][$outputid]['reqscoreaid'] = $assessmap[$output['items'][$outputid]['reqscoreaid']];
+			if ($output['items'][$outputid]['data']['reqscoreaid']>0) {
+				if (isset($assessmap[$output['items'][$outputid]['data']['reqscoreaid']])) {
+					$output['items'][$outputid]['data']['reqscoreaid'] = $assessmap[$output['items'][$outputid]['data']['reqscoreaid']];
 				} else {
 					//unset
-					$output['items'][$outputid]['reqscoreaid'] = 0;
+					$output['items'][$outputid]['data']['reqscoreaid'] = 0;
 				}
 			}
 		}
