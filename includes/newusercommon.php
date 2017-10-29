@@ -42,7 +42,7 @@ function showNewUserValidation($formname, $extrarequired=array(), $requiredrules
       email: {
         required: '.(isset($requiredrules['email'])?$requiredrules['email']:'true').',';
         if (isset($CFG['acct']['emailFormat'])) {
-        //  echo 'pattern: '.$CFG['acct']['emailFormat'].',';
+          echo 'pattern: '.$CFG['acct']['emailFormat'].',';
         }
         echo 'email: true
       }, ';
