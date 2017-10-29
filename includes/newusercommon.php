@@ -15,7 +15,8 @@ function showNewUserValidation($formname, $extrarequired=array(), $requiredrules
   }
 
   echo '<script type="text/javascript">
-  $("#'.Sanitize::simpleString($formname).'").validate({
+  $(function() {
+	$("#'.Sanitize::simpleString($formname).'").validate({
     rules: {
       SID: {
         required: '.(isset($requiredrules['SID'])?$requiredrules['SID']:'true').',
@@ -67,8 +68,11 @@ echo '
       }
 echo '},
     invalidHandler: function() {
-      setTimeout(function(){$("#'.Sanitize::simpleString($formname).'").removeClass("submitted").removeClass("submitted2");}, 100)}
+      setTimeout(function(){$("#'.Sanitize::simpleString($formname).'").removeClass("submitted").removeClass("submitted2");}, 100);
+		},
+		submitHandler: function(el,evt) {return submitlimiter(evt);}
   });
+	});
   </script>';
 }
 
@@ -83,11 +87,10 @@ function checkFormatAgainstRegex($val, $regexs) {
   return $isok;
 }
 
-function checkNewUserValidation($extrarequired=array()) {
+function checkNewUserValidation($required = array('SID','firstname','lastname','email','pw1','pw2')) {
   global $loginformat, $CFG, $DBH;
 
   $errors = array();
-  $required = array_merge(array('SID','firstname','lastname','email','pw1','pw2'), $extrarequired);
   foreach ($required as $v) {
     if (empty($_POST[$v])) {
       //JS validation should prevent us from ever showing this, hence the
@@ -95,32 +98,38 @@ function checkNewUserValidation($extrarequired=array()) {
       $errors[] = "Field ".Sanitize::encodeStringForDisplay($v)." is required";
     }
   }
-  if ($loginformat != '' && !checkFormatAgainstRegex($_POST['SID'], $loginformat)) {
-    $errors[] = "$loginprompt has invalid format";
-  }
-  $stm = $DBH->prepare('SELECT id FROM imas_users WHERE SID=:sid');
-  $stm->execute(array(':sid'=>$_POST['SID']));
-  if ($stm->rowCount()>0) {
-    $errors[] =  "$loginprompt '" . Sanitize::encodeStringForDisplay($_POST['SID']) . "' is already used. ";
-  }
-  if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/',$_POST['email']) ||
-    (isset($CFG['acct']['emailFormat']) && !checkFormatAgainstRegex($_POST['SID'], $CFG['acct']['emailFormat']))) {
-    $errors[] = "Invalid email address.";
-  }
-  if (isset($CFG['acct']['passwordFormat']) && !checkFormatAgainstRegex($_POST['pw1'], $CFG['acct']['passwordFormat'])) {
-    $errors[] = "Invalid password format.";
-  }
-  if (isset($CFG['acct']['passwordMinlength'])) {
-    $pwminlen = Sanitize::onlyInt($CFG['acct']['passwordMinlength']);
-  } else {
-    $pwminlen =  6;
-  }
-  if (strlen($_POST['pw1']) <$pwminlen ) {
-    $errors[] = "Password must be at least $pwminlen characters.";
-  }
-  if ($_POST['pw1'] != $_POST['pw2']) {
-    $errors[] = "Passwords don't match.";
-  }
+	if (in_array('SID',$required)) {
+	  if ($loginformat != '' && !checkFormatAgainstRegex($_POST['SID'], $loginformat)) {
+	    $errors[] = "$loginprompt has invalid format";
+	  }
+	  $stm = $DBH->prepare('SELECT id FROM imas_users WHERE SID=:sid');
+	  $stm->execute(array(':sid'=>$_POST['SID']));
+	  if ($stm->rowCount()>0) {
+	    $errors[] =  "$loginprompt '" . Sanitize::encodeStringForDisplay($_POST['SID']) . "' is already used. ";
+	  }
+	}
+	if (in_array('email',$required)) {
+	  if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/',$_POST['email']) ||
+	    (isset($CFG['acct']['emailFormat']) && !checkFormatAgainstRegex($_POST['SID'], $CFG['acct']['emailFormat']))) {
+	    $errors[] = "Invalid email address.";
+	  }
+	}
+	if (in_array('pw1',$required)) {
+	  if (isset($CFG['acct']['passwordFormat']) && !checkFormatAgainstRegex($_POST['pw1'], $CFG['acct']['passwordFormat'])) {
+	    $errors[] = "Invalid password format.";
+	  }
+	  if (isset($CFG['acct']['passwordMinlength'])) {
+	    $pwminlen = Sanitize::onlyInt($CFG['acct']['passwordMinlength']);
+	  } else {
+	    $pwminlen =  6;
+	  }
+	  if (strlen($_POST['pw1']) <$pwminlen ) {
+	    $errors[] = "Password must be at least $pwminlen characters.";
+	  }
+	  if (in_array('pw2',$required) && $_POST['pw1'] != $_POST['pw2']) {
+	    $errors[] = "Passwords don't match.";
+	  }
+	}
 
   if (count($errors)==0) {
     return '';

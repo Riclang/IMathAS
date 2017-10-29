@@ -78,7 +78,7 @@ switch($_GET['action']) {
 
 	case "chgrights":
 	case "newadmin":
-		echo "<form method=post id=userform action=\"actions.php?from=".Sanitize::encodeUrlParam($from);
+		echo "<form method=post id=userform class=limitaftervalidate action=\"actions.php?from=".Sanitize::encodeUrlParam($from);
 		if ($_GET['action']=="chgrights") { echo "&id=".Sanitize::encodeUrlParam($_GET['id']); }
 		echo "\">\n";
 		echo '<input type=hidden name=action value="'.Sanitize::encodeStringForDisplay($_GET['action']).'" />';

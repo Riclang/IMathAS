@@ -207,20 +207,24 @@ function addLoadEvent(func) {
 
 function submitlimiter(e) {
 	var target = e.target;
+	console.log("target" + target);
 	if (target.className == 'submitted') {
 		alert("You have already submitted this page.  Please be patient while your submission is processed.");
 		target.className = "submitted2";
 		e.preventDefault ? e.preventDefault() : e.returnValue = false;
+		return false;
 	} else if (target.className == 'submitted2') {
 		e.preventDefault ? e.preventDefault() : e.returnValue = false;
+		return false;
 	} else {
 		target.className = 'submitted';
+		return true;
 	}
 }
 function setupFormLimiters() {
 	var el = document.getElementsByTagName("form");
 	for (var i=0;i<el.length;i++) {
-		if (typeof el[i].onsubmit != 'function' && el[i].className!="nolimit") {
+		if (typeof el[i].onsubmit != 'function' && el[i].className!="nolimit" && el[i].className!="limitaftervalidate") {
 			$(el[i]).on('submit',submitlimiter);
 		}
 	}

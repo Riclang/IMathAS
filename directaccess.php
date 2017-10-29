@@ -208,7 +208,7 @@
 		$enrollkey = $stm->fetchColumn(0);
 
 ?>
-<form id="pageform" method="post" action="directaccess.php<?php echo $querys; ?>">
+<form id="pageform" class=limitaftervalidate method="post" action="directaccess.php<?php echo $querys; ?>">
 
 <?php
 if ($enrollkey!='closed') {

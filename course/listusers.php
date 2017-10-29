@@ -188,14 +188,11 @@ if (!isset($teacherid)) { // loaded by a NON-teacher
 		$placeinhead .= '<script type="text/javascript" src="'.$imasroot.'/javascript/jquery.validate.min.js"></script>';
 
 		if (isset($_POST['SID'])) {
-			//DB $query = "SELECT id FROM imas_users WHERE SID='{$_POST['SID']}'";
-			//DB $result = mysql_query($query) or die("Query failed : " . mysql_error());
-			//DB if (mysql_num_rows($result)>0) {
-			$stm = $DBH->prepare("SELECT id FROM imas_users WHERE SID=:SID");
-			$stm->execute(array(':SID'=>$_POST['SID']));
-			if ($stm->rowCount()>0) {
+			require_once("../includes/newusercommon.php");
+			$errors = checkNewUserValidation(array('SID','firstname','lastname','email','pw1'));
+			if ($errors != '') {
 				$overwriteBody = 1;
-				$body = "$loginprompt '" . Sanitize::encodeStringForDisplay($_POST['SID']) . "' is used.  <a href=\"listusers.php?cid=$cid&newstu=new\">Try Again</a>\n";
+				$body = $errors . "<br/><a href=\"listusers.php?cid=$cid&newstu=new\">Try Again</a>\n";
 			} else {
 				if (isset($CFG['GEN']['newpasswords'])) {
 					require_once("../includes/password.php");
@@ -664,7 +661,7 @@ if ($overwriteBody==1) {
 	} elseif (isset($_GET['newstu']) && $CFG['GEN']['allowinstraddstus']) {
 ?>
 
-	<form method=post id=pageform action="listusers.php?cid=<?php echo $cid ?>&newstu=new">
+	<form method=post id=pageform class=limitaftervalidate action="listusers.php?cid=<?php echo $cid ?>&newstu=new">
 		<span class=form><label for="SID"><?php echo $loginprompt;?>:</label></span> <input class=form type=text size=12 id=SID name=SID><BR class=form>
 	<span class=form><label for="pw1">Choose a password:</label></span><input class=form type=password size=20 id=pw1 name=pw1><BR class=form>
 	<span class=form><label for="firstname">Enter First Name:</label></span> <input class=form type=text size=20 id=firstnam name=firstname><BR class=form>
@@ -690,7 +687,7 @@ if ($overwriteBody==1) {
 
 	}elseif (isset($_GET['chgstuinfo'])) {
 ?>
-		<form enctype="multipart/form-data" id=pageform method=post action="listusers.php?cid=<?php echo $cid ?>&chgstuinfo=true&uid=<?php echo Sanitize::onlyInt($_GET['uid']) ?>"/>
+		<form enctype="multipart/form-data" id=pageform method=post action="listusers.php?cid=<?php echo $cid ?>&chgstuinfo=true&uid=<?php echo Sanitize::onlyInt($_GET['uid']) ?>" class="limitaftervalidate"/>
 			<span class=form><label for="SID">Enter User Name (login name):</label></span>
 			<input class=form type=text size=20 id=SID name=SID value="<?php echo Sanitize::encodeStringForDisplay($lineStudent['SID']); ?>"/><br class=form>
 			<span class=form><label for="firstname">Enter First Name:</label></span>
@@ -727,9 +724,9 @@ if ($overwriteBody==1) {
 			<span class=formright><input type="checkbox" name="locked" value="1" <?php if ($lineStudent['locked']>0) {echo ' checked="checked" ';} ?>/></span><br class=form>
 			<span class="form">Student has course hidden from course list?:</span>
 			<span class="formright"><input type="checkbox" name="hidefromcourselist" value="1" <?php if ($lineStudent['hidefromcourselist']>0) {echo ' checked="checked" ';} ?>/></span><br class=form>
-			<span class=form>Reset password?</span>
+			<span class=form><label for="doresetpw">Reset password?</label></span>
 			<span class=formright>
-				<input type=checkbox name="doresetpw" id="doresetpw" value="1" /> Reset to:
+				<input type=checkbox name="doresetpw" id="doresetpw" value="1" /> <label for="pw1">Reset to:</label>
 				<input type=text size=20 name="pw1" id="pw1" />
 			</span><br class=form />
 			<div class=submit><input type=submit value="Update Info"></div>
