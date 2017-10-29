@@ -110,7 +110,7 @@ function checkNewUserValidation($required = array('SID','firstname','lastname','
 	}
 	if (in_array('email',$required)) {
 	  if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/',$_POST['email']) ||
-	    (isset($CFG['acct']['emailFormat']) && !checkFormatAgainstRegex($_POST['SID'], $CFG['acct']['emailFormat']))) {
+	    (isset($CFG['acct']['emailFormat']) && !checkFormatAgainstRegex($_POST['email'], $CFG['acct']['emailFormat']))) {
 	    $errors[] = "Invalid email address.";
 	  }
 	}
