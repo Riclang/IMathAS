@@ -207,7 +207,6 @@ function addLoadEvent(func) {
 
 function submitlimiter(e) {
 	var target = e.target;
-	console.log("target" + target);
 	if (target.className == 'submitted') {
 		alert("You have already submitted this page.  Please be patient while your submission is processed.");
 		target.className = "submitted2";
