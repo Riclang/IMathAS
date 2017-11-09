@@ -432,6 +432,7 @@ switch($_POST['action']) {
 			}
 		}
 		if (isset($_POST['promote']) && isset($_GET['id']) && trim($_POST['browsername'])!='' && trim($_POST['browserdescrip'])!='') {
+			//TODO: Check that copyrights is sufficient
 			$istemplate += 16;
 
 			$stm = $DBH->prepare("SELECT jsondata FROM imas_courses WHERE id=:id");
